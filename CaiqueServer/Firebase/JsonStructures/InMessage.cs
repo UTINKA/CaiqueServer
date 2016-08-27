@@ -11,7 +11,7 @@ namespace CaiqueServer.Firebase.JsonStructures
         [JsonProperty("message_id", Required = Required.Always)]
         public string MessageId { get; set; }
 
-        [JsonProperty("message_type", Required = Required.Always)]
+        [JsonProperty("message_type", Required = Required.Default)]
         public string MessageType { get; set; }
 
         [JsonProperty("control_type", Required = Required.Default)]
@@ -29,14 +29,17 @@ namespace CaiqueServer.Firebase.JsonStructures
         [JsonObject(MemberSerialization.OptIn)]
         public class DataStructure
         {
-            [JsonProperty("message_status", Required = Required.Always)]
+            [JsonProperty("message_status", Required = Required.Default)]
             public string MessageStatus { get; set; }
 
-            [JsonProperty("original_message_id", Required = Required.Always)]
+            [JsonProperty("original_message_id", Required = Required.Default)]
             public string OrigMessageId { get; set; }
 
-            [JsonProperty("device_registration_id", Required = Required.Always)]
+            [JsonProperty("device_registration_id", Required = Required.Default)]
             public string RegistrationId { get; set; }
+
+            [JsonProperty("phone_number", Required = Required.Default)]
+            public string PhoneNumber { get; set; }
         }
 
         [JsonProperty("data", Required = Required.Default)]

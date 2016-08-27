@@ -20,7 +20,7 @@ namespace CaiqueServer.Firebase
                 UseSSL = true,
                 UseStartTLS = false,
                 Server = "gcm.googleapis.com",
-                Port = 5236,
+                Port = 5235,
                 Username = "420728598029",
                 Password = "AIzaSyDyTRmF8eFLno9UKLdD4bJfSUzLi_eWyeA",
                 AutoResolveConnectServer = true,
@@ -69,12 +69,12 @@ namespace CaiqueServer.Firebase
 
             Gcm.Value = JsonConvert.SerializeObject(new OutMessage
             {
-                To = "1",
+                To = "cBwG-PPZnjc:APA91bEjsLK3INuNiSV97NMn69vSs1ekvKaZaecjXYtS0wS9wnFDO0ovZKt3eXAt31MnKkeIvTRw2aODtPcUrzWK0WTsF4JkhqGavCCiogrkbw3RK636giY_CL3ajvo1M-GWRqNlPo-W",
                 MessageId = "1",
                 Notification = new OutMessage.NotificationStructure
                 {
-                    Title = "Test",
-                    Text = "Test2"
+                    Title = "From C#",
+                    Text = "Yes we can!"
                 }
             });
 
@@ -100,12 +100,12 @@ namespace CaiqueServer.Firebase
 
         private static void Xmpp_OnError(object sender, Exception ex)
         {
-
+            Console.WriteLine(ex.ToString());
         }
 
         private static void Xmpp_OnClose(object sender)
         {
-
+            Console.WriteLine("Closed");
         }
     }
 }
