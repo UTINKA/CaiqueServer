@@ -49,8 +49,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Firebase\CloudMessaging.cs" />
+    <Compile Include="Firebase\JsonStructures\CCSMessage.cs" />
     <Compile Include="Firebase\JsonStructures\InMessage.cs" />
+    <Compile Include="Firebase\JsonStructures\InMessageResponse.cs" />
     <Compile Include="Firebase\JsonStructures\OutMessage.cs" />
+    <Compile Include="Firebase\JsonStructures\OutMessageResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

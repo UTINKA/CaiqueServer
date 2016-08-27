@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CaiqueServer.Firebase.JsonStructures
 {
@@ -7,42 +8,24 @@ namespace CaiqueServer.Firebase.JsonStructures
     {
         [JsonProperty("from", Required = Required.Always)]
         public string From { get; set; }
+        
+        [JsonProperty("category", Required = Required.Always)]
+        public string Category { get; set; }
 
         [JsonProperty("message_id", Required = Required.Always)]
         public string MessageId { get; set; }
 
-        [JsonProperty("message_type", Required = Required.Default)]
-        public string MessageType { get; set; }
-
-        [JsonProperty("control_type", Required = Required.Default)]
-        public string ControlType { get; set; }
-
-        [JsonProperty("error", Required = Required.Default)]
-        public string Error { get; set; }
-
-        [JsonProperty("error_description", Required = Required.Default)]
-        public string ErrorDesc { get; set; }
-
-        [JsonProperty("category", Required = Required.Default)]
-        public string Category { get; set; }
-
-        [JsonObject(MemberSerialization.OptIn)]
-        public class DataStructure
-        {
-            [JsonProperty("message_status", Required = Required.Default)]
-            public string MessageStatus { get; set; }
-
-            [JsonProperty("original_message_id", Required = Required.Default)]
-            public string OrigMessageId { get; set; }
-
-            [JsonProperty("device_registration_id", Required = Required.Default)]
-            public string RegistrationId { get; set; }
-
-            [JsonProperty("phone_number", Required = Required.Default)]
-            public string PhoneNumber { get; set; }
-        }
-
         [JsonProperty("data", Required = Required.Default)]
-        public DataStructure Data { get; set; }
+        public JObject Data { get; set; }
+
+        public InMessageResponse GetResponse()
+        {
+            return new InMessageResponse
+            {
+                To = From,
+                MessageId = MessageId,
+                MessageType = "ack"
+            };
+        }
     }
 }

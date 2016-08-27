@@ -4,8 +4,11 @@ using agsXMPP.protocol.client;
 using agsXMPP.Xml.Dom;
 using CaiqueServer.Firebase.JsonStructures;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace CaiqueServer.Firebase
 {
@@ -33,79 +36,101 @@ namespace CaiqueServer.Firebase
                 Show = ShowType.chat
             };
 
-            Xmpp.OnReadSocketData += Xmpp_OnReadSocketData;
-            Xmpp.OnWriteSocketData += Xmpp_OnWriteSocketData;
-            Xmpp.OnLogin += Xmpp_OnLogin;
-            Xmpp.OnAuthError += Xmpp_OnAuthError;
-            Xmpp.OnMessage += Xmpp_OnMessage;
-            Xmpp.OnError += Xmpp_OnError;
-            Xmpp.OnClose += Xmpp_OnClose;
+            Xmpp.OnReadSocketData += OnReadSocketData;
+            Xmpp.OnWriteSocketData += OnWriteSocketData;
+            Xmpp.OnLogin += OnLogin;
+            Xmpp.OnAuthError += OnAuthError;
+            Xmpp.OnMessage += OnMessage;
+            Xmpp.OnError += OnError;
+            Xmpp.OnClose += OnClose;
         }
 
-        internal static void Start()
+        public static void Start()
         {
             Xmpp.Open();
         }
 
-        private static void Xmpp_OnWriteSocketData(object sender, byte[] data, int count)
+        private static void OnWriteSocketData(object sender, byte[] data, int count)
         {
             var text = Encoding.ASCII.GetString(data, 0, count);
-            Console.WriteLine("out " + text);
+            Console.WriteLine("-- Out " + text);
         }
 
-        private static void Xmpp_OnReadSocketData(object sender, byte[] data, int count)
+        private static void OnReadSocketData(object sender, byte[] data, int count)
         {
             var text = Encoding.ASCII.GetString(data, 0, count);
-            Console.WriteLine("in " + text);
+            Console.WriteLine("-- In " + text);
         }
 
-        private static void Xmpp_OnLogin(object sender)
+        private static void OnLogin(object sender)
         {
             Console.WriteLine("Logged in");
-
-            var Gcm = new Element("gcm");
-            Gcm.Attributes["xmlns"] = "google:mobile:data";
-            //Gcm.Value = "{ \"to\" : \"1\", \"message_id\" : \"1\", \"notification\" : { \"title\" : \"Test\", \"text\" : \"Test 2\" }}";
-
-            Gcm.Value = JsonConvert.SerializeObject(new OutMessage
-            {
-                To = "cBwG-PPZnjc:APA91bEjsLK3INuNiSV97NMn69vSs1ekvKaZaecjXYtS0wS9wnFDO0ovZKt3eXAt31MnKkeIvTRw2aODtPcUrzWK0WTsF4JkhqGavCCiogrkbw3RK636giY_CL3ajvo1M-GWRqNlPo-W",
-                MessageId = "1",
-                Notification = new OutMessage.NotificationStructure
-                {
-                    Title = "From C#",
-                    Text = "Yes we can!"
-                }
-            });
-
-            var Msg = new Element("message");
-            Msg.AddChild(Gcm);
-            Msg.Attributes["id"] = string.Empty;
-            Xmpp.Send(Msg);
+            //"{ \"to\" : \"1\", \"message_id\" : \"1\", \"notification\" : { \"title\" : \"Test\", \"text\" : \"Test 2\" }}";
         }
 
-        private static void Xmpp_OnAuthError(object sender, Element e)
+        private static void OnAuthError(object sender, Element e)
         {
             Console.WriteLine("Login failed");
         }
 
-        private static void Xmpp_OnMessage(object sender, Message msg)
+        private static long MsgId = 1;
+
+        private static void OnMessage(object sender, Message msg)
         {
-            if (!msg.Attributes.Contains("type") || (string)msg.Attributes["type"] != "error")
+            var JData = JObject.Parse(msg.FirstChild.Value);
+            if (JData["message_type"] == null)
             {
-                var Content = JsonConvert.DeserializeObject<InMessage>(msg.FirstChild.Value);
-                Console.WriteLine("Message from " + Content.From);
+                var Message = JData.ToObject<InMessage>();
+                Console.WriteLine("-- Message " + Message.Data ?? string.Empty);
+
+                var ResponseId = Interlocked.Increment(ref MsgId).ToString();
+                var ResponseData = new JObject();
+                ResponseData["id"] = ResponseId;
+
+                Xmpp.Send(FromJson(JsonConvert.SerializeObject(Message.GetResponse())));
+                Xmpp.Send(FromJson(JsonConvert.SerializeObject(new OutMessage
+                {
+                    To = Message.From,
+                    MessageId = ResponseId,
+                    Notification = new OutMessage.NotificationPayload
+                    {
+                        Title = "From C#",
+                        Text = "Yes we can! " + ResponseId
+                    },
+                    Data = ResponseData
+                })));
+            }
+            else
+            {
+                var Message = JData.ToObject<CCSMessage>();
+                Console.WriteLine("-- CCS Message " + Message.MessageType);
             }
         }
 
-        private static void Xmpp_OnError(object sender, Exception ex)
+        private static void OnError(object sender, Exception ex)
         {
             Console.WriteLine(ex.ToString());
         }
 
-        private static void Xmpp_OnClose(object sender)
+        private static void OnClose(object sender)
         {
             Console.WriteLine("Closed");
+        }
+
+        private static Element FromJson(string Json)
+        {
+            var Gcm = new Element
+            {
+                TagName = "gcm",
+                Value = Json
+            };
+            Gcm.Attributes["xmlns"] = "google:mobile:data";
+
+            var Msg = new Element("message");
+            Msg.AddChild(Gcm);
+            Msg.Attributes["id"] = string.Empty;
+
+            return Msg;
         }
     }
 }
