@@ -10,6 +10,9 @@ namespace CaiqueServer
     {
         static void Main(string[] args)
         {
+            Firebase.CloudMessaging.Start();
+
+            Task.Delay(int.MaxValue).Wait();
         }
     }
 }

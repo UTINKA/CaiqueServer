@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaiqueServer", "CaiqueServer\CaiqueServer.csproj", "{5374C096-CA53-4993-93D5-00B92B8829FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "agsxmpp", "agsxmpp\agsxmpp.csproj", "{C6379274-C5DE-41A2-AE3E-753F85A557BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StarkSoftProxy", "starksoftproxy\StarkSoftProxy.csproj", "{3F8CF2C1-EA37-444F-8693-A3A00B1131D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{5374C096-CA53-4993-93D5-00B92B8829FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5374C096-CA53-4993-93D5-00B92B8829FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5374C096-CA53-4993-93D5-00B92B8829FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6379274-C5DE-41A2-AE3E-753F85A557BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6379274-C5DE-41A2-AE3E-753F85A557BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6379274-C5DE-41A2-AE3E-753F85A557BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6379274-C5DE-41A2-AE3E-753F85A557BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F8CF2C1-EA37-444F-8693-A3A00B1131D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F8CF2C1-EA37-444F-8693-A3A00B1131D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F8CF2C1-EA37-444F-8693-A3A00B1131D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F8CF2C1-EA37-444F-8693-A3A00B1131D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
