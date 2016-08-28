@@ -34,8 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BouncyCastle.Crypto, Version=1.7.4137.9688, Culture=neutral, PublicKeyToken=a4292a325f69b123, processorArchitecture=MSIL">
-      <HintPath>..\packages\BouncyCastle.1.7.0\lib\Net40-Client\BouncyCastle.Crypto.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.Apis, Version=1.16.0.0, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
@@ -62,8 +62,8 @@
       <HintPath>..\packages\Google.Apis.YouTube.v3.1.16.0.582\lib\netstandard1.3\Google.Apis.YouTube.v3.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=1.2.15.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.5\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -88,12 +88,12 @@
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />
     <Compile Include="Firebase\CloudMessaging.cs" />
-    <Compile Include="Firebase\JsonStructures\CCSMessage.cs" />
     <Compile Include="Firebase\JsonStructures\InMessage.cs" />
     <Compile Include="Firebase\JsonStructures\InMessageResponse.cs" />
     <Compile Include="Firebase\JsonStructures\OutMessage.cs" />
     <Compile Include="Firebase\JsonStructures\OutMessageResponse.cs" />
-    <Compile Include="Music\IcecastStreamer.cs" />
+    <Compile Include="Firebase\MessageHandlers.cs" />
+    <Compile Include="Music\Streamer.cs" />
     <Compile Include="Music\Songdata.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -114,9 +114,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Includes\ffmpeg.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Includes\whitenoise.wav">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

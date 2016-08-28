@@ -64,7 +64,6 @@ namespace CaiqueServer.Firebase
         private static void OnLogin(object sender)
         {
             Console.WriteLine("Logged in");
-            //"{ \"to\" : \"1\", \"message_id\" : \"1\", \"notification\" : { \"title\" : \"Test\", \"text\" : \"Test 2\" }}";
         }
 
         private static void OnAuthError(object sender, Element e)
@@ -72,37 +71,18 @@ namespace CaiqueServer.Firebase
             Console.WriteLine("Login failed");
         }
 
-        private static long MsgId = 1;
-
         private static void OnMessage(object sender, Message msg)
         {
             var JData = JObject.Parse(msg.FirstChild.Value);
             if (JData["message_type"] == null)
             {
-                var Message = JData.ToObject<InMessage>();
-                Console.WriteLine("-- Message " + Message.Data ?? string.Empty);
-
-                var ResponseId = Interlocked.Increment(ref MsgId).ToString();
-                var ResponseData = new JObject();
-                ResponseData["id"] = ResponseId;
-
-                Xmpp.Send(FromJson(JsonConvert.SerializeObject(Message.GetResponse())));
-                Xmpp.Send(FromJson(JsonConvert.SerializeObject(new OutMessage
-                {
-                    To = Message.From,
-                    MessageId = ResponseId,
-                    Notification = new OutMessage.NotificationPayload
-                    {
-                        Title = "From C#",
-                        Text = "Yes we can! " + ResponseId
-                    },
-                    Data = ResponseData
-                })));
+                var In = JData.ToObject<InMessage>();
+                Send(In.GetAck());
+                MessageHandlers.OnInMessage(In);
             }
             else
             {
-                var Message = JData.ToObject<CCSMessage>();
-                Console.WriteLine("-- CCS Message " + Message.MessageType);
+                MessageHandlers.OnOutMessageResponse(JData.ToObject<OutMessageResponse>());
             }
         }
 
@@ -116,12 +96,12 @@ namespace CaiqueServer.Firebase
             Console.WriteLine("Closed");
         }
 
-        private static Element FromJson(string Json)
+        internal static void Send(object JsonObject)
         {
             var Gcm = new Element
             {
                 TagName = "gcm",
-                Value = Json
+                Value = JsonConvert.SerializeObject(JsonObject)
             };
             Gcm.Attributes["xmlns"] = "google:mobile:data";
 
@@ -129,7 +109,7 @@ namespace CaiqueServer.Firebase
             Msg.AddChild(Gcm);
             Msg.Attributes["id"] = string.Empty;
 
-            return Msg;
+            Xmpp.Send(Msg);
         }
     }
 }

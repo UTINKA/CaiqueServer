@@ -8,30 +8,27 @@ namespace CaiqueServer
     {
         static void Main(string[] args)
         {
-            var Streamers = new IcecastStreamer[40];
-            var Song = Songdata.Search("Nano Gallows Bell")[0];
-
-            for (int i = 0; i < Streamers.Length; i++)
-            {
-                Streamers[i] = new IcecastStreamer(i);
-                Streamers[i].Queue.Enqueue(Song);
-                Streamers[i].StreamLoop();
-            }
+            Console.Title = "Caique Server";
 
             Firebase.CloudMessaging.Start();
 
             ConsoleEvents.SetHandler(delegate
             {
                 Console.WriteLine("Shutting down..");
-                for (int i = 0; i < Streamers.Length; i++)
-                {
-                    Streamers[i].CloseRequester.Cancel();
-                }
 
-                Task.Delay(500).Wait();
+                Streamer.Shutdown.Cancel();
+
+                Task.Delay(int.MaxValue).Wait();
             });
 
-            Task.Delay(int.MaxValue).Wait();
+            var Song = Songdata.Search("Nano Gallows Bell")[1];
+            var Rand = new Random();
+
+            while (true)
+            {
+                Task.Delay(5000).Wait();
+                Streamer.Get(Rand.Next(0, 10000)).Queue.Enqueue(Song);
+            }
         }
     }
 }

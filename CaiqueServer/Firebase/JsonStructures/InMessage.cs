@@ -18,7 +18,7 @@ namespace CaiqueServer.Firebase.JsonStructures
         [JsonProperty("data", Required = Required.Default)]
         public JObject Data { get; set; }
 
-        public InMessageResponse GetResponse()
+        public InMessageResponse GetAck()
         {
             return new InMessageResponse
             {
