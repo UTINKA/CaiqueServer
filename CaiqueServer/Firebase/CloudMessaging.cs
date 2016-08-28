@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace CaiqueServer.Firebase
 {
@@ -37,63 +37,76 @@ namespace CaiqueServer.Firebase
 
             Xmpp.OnReadSocketData += OnReadSocketData;
             Xmpp.OnWriteSocketData += OnWriteSocketData;
-            Xmpp.OnLogin += OnLogin;
-            Xmpp.OnAuthError += OnAuthError;
             Xmpp.OnMessage += OnMessage;
             Xmpp.OnError += OnError;
-            Xmpp.OnClose += OnClose;
         }
 
-        internal static void Start()
+        internal static async Task<bool> Start()
         {
+            var T = new TaskCompletionSource<bool>();
+            Xmpp.OnLogin += (s) => T.TrySetResult(true);
+            Xmpp.OnAuthError += (s, e) => T.TrySetResult(false);
             Xmpp.Open();
+            return await T.Task;
         }
 
-        private static void OnWriteSocketData(object sender, byte[] data, int count)
+        internal static async Task Stop()
+        {
+            var T = new TaskCompletionSource<bool>();
+            Xmpp.OnClose += (s) => T.TrySetResult(true);
+            Xmpp.Close();
+            await T.Task;
+        }
+
+        private static void OnWriteSocketData(object s, byte[] data, int count)
         {
             var text = Encoding.ASCII.GetString(data, 0, count);
             Console.WriteLine("-- Out " + text);
         }
 
-        private static void OnReadSocketData(object sender, byte[] data, int count)
+        private static void OnReadSocketData(object s, byte[] data, int count)
         {
             var text = Encoding.ASCII.GetString(data, 0, count);
             Console.WriteLine("-- In " + text);
         }
 
-        private static void OnLogin(object sender)
-        {
-            Console.WriteLine("Logged in");
-        }
-
-        private static void OnAuthError(object sender, Element e)
-        {
-            Console.WriteLine("Login failed");
-        }
-
-        private static void OnMessage(object sender, Message msg)
+        private static void OnMessage(object s, Message msg)
         {
             var JData = JObject.Parse(msg.FirstChild.Value);
+
             if (JData["message_type"] == null)
             {
-                var In = JData.ToObject<InMessage>();
-                Send(In.GetAck());
-                MessageHandlers.OnInMessage(In);
+                var Message = JData.ToObject<UpstreamMessage>();
+                Send(new ReceivedMessageAck
+                {
+                    To = Message.From,
+                    MessageId = Message.MessageId,
+                    MessageType = "ack"
+                });
+
+                MessageHandlers.Upstream(Message);
+            }
+            else if (JData["message_type"].ToString().EndsWith("ack"))
+            {
+                MessageHandlers.Ack(JData.ToObject<SentMessageAck>());
             }
             else
             {
-                MessageHandlers.OnOutMessageResponse(JData.ToObject<OutMessageResponse>());
+                var Message = JData.ToObject<ServerMessage>();
+                Send(new ReceivedMessageAck
+                {
+                    To = Message.From,
+                    MessageId = Message.MessageId,
+                    MessageType = "ack"
+                });
+
+                MessageHandlers.Server(Message);
             }
         }
 
-        private static void OnError(object sender, Exception ex)
+        private static void OnError(object s, Exception ex)
         {
             Console.WriteLine(ex.ToString());
-        }
-
-        private static void OnClose(object sender)
-        {
-            Console.WriteLine("Closed");
         }
 
         internal static void Send(object JsonObject)

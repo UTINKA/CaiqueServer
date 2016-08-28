@@ -9,7 +9,7 @@ namespace CaiqueServer.Firebase
     {
         private static long MsgId = new Random().Next();
 
-        public static void OnInMessage(InMessage In)
+        public static void Upstream(UpstreamMessage In)
         {
             Console.WriteLine("-- Message " + In.Data ?? string.Empty);
             var ResponseId = Interlocked.Increment(ref MsgId).ToString();
@@ -17,11 +17,11 @@ namespace CaiqueServer.Firebase
             var ResponseData = new JObject();
             ResponseData["id"] = ResponseId;
 
-            CloudMessaging.Send(new OutMessage
+            CloudMessaging.Send(new SendMessage
             {
                 To = In.From,
                 MessageId = ResponseId,
-                Notification = new OutMessage.NotificationPayload
+                Notification = new SendMessage.NotificationPayload
                 {
                     Title = "From C#",
                     Text = "Yes we can! " + ResponseId
@@ -30,9 +30,14 @@ namespace CaiqueServer.Firebase
             });
         }
 
-        public static void OnOutMessageResponse(OutMessageResponse Response)
+        public static void Ack(SentMessageAck Response)
         {
-            Console.WriteLine();
+            Console.WriteLine("Out Response");
+        }
+
+        public static void Server(ServerMessage Response)
+        {
+            Console.WriteLine("CCS");
         }
     }
 }

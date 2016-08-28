@@ -88,10 +88,11 @@
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />
     <Compile Include="Firebase\CloudMessaging.cs" />
-    <Compile Include="Firebase\JsonStructures\InMessage.cs" />
-    <Compile Include="Firebase\JsonStructures\InMessageResponse.cs" />
-    <Compile Include="Firebase\JsonStructures\OutMessage.cs" />
-    <Compile Include="Firebase\JsonStructures\OutMessageResponse.cs" />
+    <Compile Include="Firebase\JsonStructures\ServerMessage.cs" />
+    <Compile Include="Firebase\JsonStructures\UpstreamMessage.cs" />
+    <Compile Include="Firebase\JsonStructures\ReceivedMessageAck.cs" />
+    <Compile Include="Firebase\JsonStructures\SendMessage.cs" />
+    <Compile Include="Firebase\JsonStructures\SentMessageAck.cs" />
     <Compile Include="Firebase\MessageHandlers.cs" />
     <Compile Include="Music\Streamer.cs" />
     <Compile Include="Music\Songdata.cs" />

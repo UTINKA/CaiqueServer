@@ -19,7 +19,8 @@ namespace CaiqueServer.Music
         private static string IcecastAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"source:{IcecastPass}"));
 
         private static ConcurrentDictionary<long, Streamer> Streamers = new ConcurrentDictionary<long, Streamer>();
-        internal static CancellationTokenSource Shutdown = new CancellationTokenSource();
+        private static CancellationTokenSource Stop = new CancellationTokenSource();
+        private static ConcurrentBag<ManualResetEvent> ShutdownCompleted = new ConcurrentBag<ManualResetEvent>();
 
         internal static Streamer Get(long Id)
         {
@@ -29,11 +30,18 @@ namespace CaiqueServer.Music
             });
         }
 
+        internal static void Shutdown()
+        {
+            Stop.Cancel();
+            WaitHandle.WaitAll(ShutdownCompleted.ToArray());
+        }
+
         internal Songdata Song;
-        internal ConcurrentQueue<Songdata> Queue = new ConcurrentQueue<Songdata>();
+        private ConcurrentQueue<Songdata> Queue = new ConcurrentQueue<Songdata>();
         internal const int MaxQueued = 16;
 
         internal CancellationTokenSource Skip = new CancellationTokenSource();
+        private TaskCompletionSource<bool> EmptyQueue;
 
         private string Link;
         private string PlaylistFile
@@ -66,16 +74,32 @@ namespace CaiqueServer.Music
                 }
             }
 
-            BackgroundStream();
+            var Reset = new ManualResetEvent(false);
+            ShutdownCompleted.Add(Reset);
+            BackgroundStream().ContinueWith(delegate
+            {
+                Reset.Set();
+            });
         }
 
-        private async void BackgroundStream()
+        internal void Enqueue(Songdata Song)
         {
-            while (!Shutdown.IsCancellationRequested)
+            Queue.Enqueue(Song);
+            EmptyQueue?.TrySetResult(true);
+        }
+
+        private async Task BackgroundStream()
+        {
+            while (!Stop.IsCancellationRequested)
             {
                 try
                 {
-                    await StreamUntilQueueEmpty();
+                    EmptyQueue = new TaskCompletionSource<bool>();
+                    using (EmptyQueue.Task)
+                    {
+                        await StreamUntilQueueEmpty();
+                        await EmptyQueue.Task;
+                    }
                 }
                 catch (Exception Ex)
                 {
@@ -86,11 +110,6 @@ namespace CaiqueServer.Music
 
         private async Task StreamUntilQueueEmpty()
         {
-            while (Queue.Count == 0)
-            {
-                await Task.Delay(3000);
-            }
-
             using (var Client = new Socket(SocketType.Stream, ProtocolType.Tcp))
             {
                 await Client.ConnectAsync(EndPoint);
@@ -116,7 +135,7 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
                         RedirectStandardOutput = true
                     };
 
-                    while (!Shutdown.IsCancellationRequested && Queue.TryDequeue(out Song))
+                    while (!Stop.IsCancellationRequested && Queue.TryDequeue(out Song))
                     {
                         UpdateMetadataAndSave();
 
@@ -125,7 +144,7 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
 
                         using (var Ffmpeg = Process.Start(ProcessStartInfo))
                         using (var Input = Ffmpeg.StandardOutput.BaseStream)
-                        using (var Cancel = CancellationTokenSource.CreateLinkedTokenSource(Skip.Token, Shutdown.Token))
+                        using (var Cancel = CancellationTokenSource.CreateLinkedTokenSource(Skip.Token, Stop.Token))
                         {
                             try
                             {
@@ -145,26 +164,7 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
         {
             try
             {
-                using (var Client = new Socket(SocketType.Stream, ProtocolType.Tcp))
-                {
-                    await Client.ConnectAsync(EndPoint);
-                    await Client.SendAsync(Encoding.ASCII.GetBytes($"GET /admin/metadata?pass={IcecastPass}&mode=updinfo&mount=/{Link}&song={HttpUtility.UrlEncode(Song.FullName)}" + @" HTTP/1.0
-Authorization: Basic " + IcecastAuth + @"
-User-Agent: (Mozilla Compatible)
-
-"));
-                }
-            }
-            catch (Exception Ex)
-            {
-                Console.WriteLine(Ex.ToString());
-            }
-
-            try
-            {
-                Console.WriteLine("Saving " + PlaylistFile);
-
-                using (var Writer = new BinaryWriter(File.Open(PlaylistFile, FileMode.Create)))
+                using (var Writer = new BinaryWriter(File.Open(PlaylistFile, FileMode.Create, FileAccess.Write, FileShare.None)))
                 {
                     var List = Queue.ToList();
                     List.Insert(0, Song);
@@ -178,6 +178,16 @@ User-Agent: (Mozilla Compatible)
                         Writer.Write((int)Item.Type);
                         Writer.Write(Item.Thumbnail ?? string.Empty);
                     }
+                }
+
+                using (var Client = new Socket(SocketType.Stream, ProtocolType.Tcp))
+                {
+                    await Client.ConnectAsync(EndPoint);
+                    await Client.SendAsync(Encoding.ASCII.GetBytes($"GET /admin/metadata?pass={IcecastPass}&mode=updinfo&mount=/{Link}&song={HttpUtility.UrlEncode(Song.FullName)}" + @" HTTP/1.0
+Authorization: Basic " + IcecastAuth + @"
+User-Agent: (Mozilla Compatible)
+
+"));
                 }
             }
             catch (Exception Ex)

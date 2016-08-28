@@ -10,15 +10,21 @@ namespace CaiqueServer
         {
             Console.Title = "Caique Server";
 
-            Firebase.CloudMessaging.Start();
+            if (!Firebase.CloudMessaging.Start().Result)
+            {
+                Console.WriteLine("Auth Error!");
+            }
 
             ConsoleEvents.SetHandler(delegate
             {
                 Console.WriteLine("Shutting down..");
 
-                Streamer.Shutdown.Cancel();
+                var StopFCM = Firebase.CloudMessaging.Stop();
+                Streamer.Shutdown();
+                StopFCM.Wait();
 
-                Task.Delay(int.MaxValue).Wait();
+                Console.WriteLine("Shutdown complete");
+                Task.Delay(500).Wait();
             });
 
             var Song = Songdata.Search("Nano Gallows Bell")[1];
@@ -27,7 +33,7 @@ namespace CaiqueServer
             while (true)
             {
                 Task.Delay(5000).Wait();
-                Streamer.Get(Rand.Next(0, 10000)).Queue.Enqueue(Song);
+                Streamer.Get(Rand.Next(0, 10000)).Enqueue(Song);
             }
         }
     }
