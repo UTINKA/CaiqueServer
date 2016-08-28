@@ -24,7 +24,7 @@ namespace CaiqueServer
                 StopFCM.Wait();
 
                 Console.WriteLine("Shutdown complete");
-                Task.Delay(500).Wait();
+                Task.Delay(250).Wait();
             });
 
             var Song = Songdata.Search("Nano Gallows Bell")[1];
@@ -34,6 +34,16 @@ namespace CaiqueServer
             {
                 Task.Delay(5000).Wait();
                 Streamer.Get(Rand.Next(0, 10000)).Enqueue(Song);
+                Firebase.CloudMessaging.Send(new Firebase.JsonStructures.SendMessage
+                {
+                    To = "/topics/1",
+                    MessageId = "6241",
+                    Notification = new Firebase.JsonStructures.SendMessage.NotificationPayload
+                    {
+                        Title = "Topic Test",
+                        Text = "Topic 1"
+                    }
+                });
             }
         }
     }

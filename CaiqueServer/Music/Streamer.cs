@@ -33,7 +33,11 @@ namespace CaiqueServer.Music
         internal static void Shutdown()
         {
             Stop.Cancel();
-            WaitHandle.WaitAll(ShutdownCompleted.ToArray());
+            var Shutdown = ShutdownCompleted.ToArray();
+            if (Shutdown.Length != 0)
+            {
+                WaitHandle.WaitAll(Shutdown);
+            }
         }
 
         internal Songdata Song;
@@ -95,11 +99,8 @@ namespace CaiqueServer.Music
                 try
                 {
                     EmptyQueue = new TaskCompletionSource<bool>();
-                    using (EmptyQueue.Task)
-                    {
-                        await StreamUntilQueueEmpty();
-                        await EmptyQueue.Task;
-                    }
+                    await StreamUntilQueueEmpty();
+                    await EmptyQueue.Task;
                 }
                 catch (Exception Ex)
                 {
