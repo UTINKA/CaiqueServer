@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -15,15 +13,15 @@ namespace CaiqueServer.Music
     class IcecastStreamer
     {
         private static IPEndPoint EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8000);
-        private const string IcecastAuth = "c291cmNlOjVDVzdOcVlHN1BhZWFNRnNRMnVmVkN6ZUs3eWZhTUxIZDk3WmczNlU0NjVMeDhqNDkyNVlRVG5wOUJZdVhLRlQ=";
-        private const string IcecastPass = "5CW7NqYG7PaeaMFsQ2ufVCzeK7yfaMLHd97Zg36U465Lx8j4925YQTnp9BYuXKFT";
+        private const string IcecastPass = "caiquesource";
+        private static string IcecastAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"source:{IcecastPass}"));
 
         internal Songdata Song;
         internal ConcurrentQueue<Songdata> Queue = new ConcurrentQueue<Songdata>();
         internal const int MaxQueued = 16;
 
         internal CancellationTokenSource Skip = new CancellationTokenSource();
-        internal CancellationTokenSource Close = new CancellationTokenSource();
+        internal CancellationTokenSource CloseRequester = new CancellationTokenSource();
 
         private string Link;
 
@@ -34,7 +32,7 @@ namespace CaiqueServer.Music
 
         internal async void StreamLoop()
         {
-            while (!Close.IsCancellationRequested)
+            while (!CloseRequester.IsCancellationRequested)
             {
                 try
                 {
@@ -67,23 +65,28 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
 
                 using (var Output = new NetworkStream(Client))
                 {
-                    while (!Close.IsCancellationRequested)
+                    while (!CloseRequester.IsCancellationRequested)
                     {
                         if (!Queue.TryDequeue(out Song))
                         {
-                            Song = new Songdata
+                            /*Song = new Songdata
                             {
                                 FullName = string.Empty,
-                                Url = "whitenoise.wav",
+                                Url = "Includes/whitenoise.wav",
                                 Type = SongType.Local
-                            };
+                            };*/
+
+                            //Song = Songdata.Search("Nano Gallows Bell")[0];
+
+                            await Task.Delay(3000);
+                            continue;
                         }
 
                         UpdateMetadata();
 
                         using (var Ffmpeg = Process.Start(new ProcessStartInfo
                         {
-                            FileName = "ffmpeg",
+                            FileName = "Includes/ffmpeg",
                             Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -codec:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1",
                             UseShellExecute = false,
                             RedirectStandardOutput = true

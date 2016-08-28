@@ -6,7 +6,6 @@ using CaiqueServer.Firebase.JsonStructures;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -45,7 +44,7 @@ namespace CaiqueServer.Firebase
             Xmpp.OnClose += OnClose;
         }
 
-        public static void Start()
+        internal static void Start()
         {
             Xmpp.Open();
         }

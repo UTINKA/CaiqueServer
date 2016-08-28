@@ -90,7 +90,7 @@ namespace CaiqueServer.Music
         internal SongType Type;
         internal string Thumbnail;
 
-        public static readonly Regex YoutubeVideoRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
+        internal static readonly Regex YoutubeVideoRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
 
         internal Songdata(string Url)
         {
@@ -182,7 +182,7 @@ namespace CaiqueServer.Music
                     {
                         FullName = Result.Snippet.Title,
                         Url = $"http://www.youtube.com/watch?v={Result.Id.VideoId}",
-                        Type = SongType.Remote,
+                        Type = SongType.YouTube,
                         Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
                     });
                 }
