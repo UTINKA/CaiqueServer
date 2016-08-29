@@ -30,20 +30,38 @@ namespace CaiqueServer
             var Song = Songdata.Search("Nano Gallows Bell")[1];
             var Rand = new Random();
 
+            var MessageId = 1;
+
+            var UpdateData = new Newtonsoft.Json.Linq.JObject();
+            UpdateData["test"] = "from App Update";
+
+            var NotificationData = new Newtonsoft.Json.Linq.JObject();
+            NotificationData["test"] = "from Notification";
+
             while (true)
             {
-                Task.Delay(5000).Wait();
-                Streamer.Get(Rand.Next(0, 10000)).Enqueue(Song);
+                //Streamer.Get(Rand.Next(0, 10000)).Enqueue(Song);
+
                 Firebase.CloudMessaging.Send(new Firebase.JsonStructures.SendMessage
                 {
                     To = "/topics/1",
-                    MessageId = "6241",
+                    MessageId = MessageId++.ToString(),
+                    Data = UpdateData
+                });
+
+                Firebase.CloudMessaging.Send(new Firebase.JsonStructures.SendMessage
+                {
+                    To = "/topics/1",
+                    MessageId = MessageId++.ToString(),
                     Notification = new Firebase.JsonStructures.SendMessage.NotificationPayload
                     {
                         Title = "Topic Test",
                         Text = "Topic 1"
-                    }
+                    },
+                    Data = NotificationData
                 });
+
+                Task.Delay(15000).Wait();
             }
         }
     }

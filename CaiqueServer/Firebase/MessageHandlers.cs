@@ -21,11 +21,11 @@ namespace CaiqueServer.Firebase
             {
                 To = In.From,
                 MessageId = ResponseId,
-                Notification = new SendMessage.NotificationPayload
+                /*Notification = new SendMessage.NotificationPayload
                 {
                     Title = "From C#",
                     Text = "Yes we can! " + ResponseId
-                },
+                },*/
                 Data = ResponseData
             });
         }
