@@ -141,7 +141,7 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
                         UpdateMetadataAndSave();
 
                         //ProcessStartInfo.Arguments = $"-re -i includes/whitenoise.m4a -vn -codec:a copy -f adts -v quiet pipe:1";
-                        ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -codec:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1";
+                        ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1";
 
                         using (var Ffmpeg = Process.Start(ProcessStartInfo))
                         using (var Input = Ffmpeg.StandardOutput.BaseStream)

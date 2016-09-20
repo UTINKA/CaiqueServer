@@ -11,7 +11,7 @@ namespace CaiqueServer.Firebase
 
         public static void Upstream(UpstreamMessage In)
         {
-            Console.WriteLine("-- Message " + In.Data ?? string.Empty);
+            Console.WriteLine("-- Upstream Message " + In.Data ?? string.Empty);
             var ResponseId = Interlocked.Increment(ref MsgId).ToString();
 
             var ResponseData = new JObject();
@@ -30,14 +30,28 @@ namespace CaiqueServer.Firebase
             });
         }
 
-        public static void Ack(SentMessageAck Response)
+        public static void SentAck(SentMessageAck Response)
         {
-            Console.WriteLine("Out Response");
+            if (Response.MessageType == "ack")
+            {
+                Console.WriteLine("-- Message " + Response.MessageId + " acknowledged");
+            }
+            else
+            {
+                Console.WriteLine("-- Message " + Response.MessageId + " not acknowledged - " + Response.ToString());
+            }
         }
 
-        public static void Server(ServerMessage Response)
+        public static void Server(ServerMessage Info)
         {
-            Console.WriteLine("CCS");
+            if (Info.MessageType == "receipt")
+            {
+                Console.WriteLine("-- Receipt " + Info.MessageId);
+            }
+            else
+            {
+                Console.WriteLine("-- CCS " + Info.ControlType);
+            }
         }
     }
 }

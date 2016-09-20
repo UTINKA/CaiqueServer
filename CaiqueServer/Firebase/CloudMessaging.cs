@@ -60,14 +60,14 @@ namespace CaiqueServer.Firebase
 
         private static void OnWriteSocketData(object s, byte[] data, int count)
         {
-            var text = Encoding.ASCII.GetString(data, 0, count);
-            Console.WriteLine("-- Out " + text);
+            //var text = Encoding.ASCII.GetString(data, 0, count);
+            //Console.WriteLine("-- Out " + text);
         }
 
         private static void OnReadSocketData(object s, byte[] data, int count)
         {
-            var text = Encoding.ASCII.GetString(data, 0, count);
-            Console.WriteLine("-- In " + text);
+            //var text = Encoding.ASCII.GetString(data, 0, count);
+            //Console.WriteLine("-- In " + text);
         }
 
         private static void OnMessage(object s, Message msg)
@@ -88,7 +88,7 @@ namespace CaiqueServer.Firebase
             }
             else if (JData["message_type"].ToString().EndsWith("ack"))
             {
-                MessageHandlers.Ack(JData.ToObject<SentMessageAck>());
+                MessageHandlers.SentAck(JData.ToObject<SentMessageAck>());
             }
             else
             {
@@ -116,6 +116,7 @@ namespace CaiqueServer.Firebase
                 TagName = "gcm",
                 Value = JsonConvert.SerializeObject(JsonObject)
             };
+
             Gcm.Attributes["xmlns"] = "google:mobile:data";
 
             var Msg = new Element("message");
