@@ -38,7 +38,7 @@ namespace CaiqueServer.Firebase
             }
             else
             {
-                Console.WriteLine("-- Message " + Response.MessageId + " not acknowledged - " + Response.ToString());
+                Console.WriteLine("-- Message " + Response.MessageId + " not acknowledged - " + Response.Error + " " + Response.ErrorDesc);
             }
         }
 

@@ -99,7 +99,7 @@ namespace CaiqueServer.Firebase
                     MessageId = Message.MessageId,
                     MessageType = "ack"
                 });
-
+                
                 MessageHandlers.Server(Message);
             }
         }

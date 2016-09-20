@@ -94,8 +94,12 @@ namespace CaiqueServer.Music
 
         private async Task BackgroundStream()
         {
+            await Task.Yield();
+
             while (!Stop.IsCancellationRequested)
             {
+                Console.WriteLine("Started background stream " + Link);
+
                 try
                 {
                     EmptyQueue = new TaskCompletionSource<bool>();
@@ -141,7 +145,14 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
                         UpdateMetadataAndSave();
 
                         //ProcessStartInfo.Arguments = $"-re -i includes/whitenoise.m4a -vn -codec:a copy -f adts -v quiet pipe:1";
-                        ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1";
+                        if (Song.Type == SongType.YouTube)
+                        {
+                            ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a copy -f adts -v quiet pipe:1";
+                        }
+                        else
+                        {
+                            ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1";
+                        }
 
                         using (var Ffmpeg = Process.Start(ProcessStartInfo))
                         using (var Input = Ffmpeg.StandardOutput.BaseStream)
@@ -149,6 +160,7 @@ ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
                         {
                             try
                             {
+                                Ffmpeg.PriorityClass = ProcessPriorityClass.BelowNormal;
                                 await Input.CopyToAsync(Output, 81920, Cancel.Token);
                             }
                             catch (TaskCanceledException)
