@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace CaiqueServer.Firebase.JsonStructures
+namespace CaiqueServer.Firebase.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
     class User

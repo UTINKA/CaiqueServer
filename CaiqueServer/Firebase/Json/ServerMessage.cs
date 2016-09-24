@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace CaiqueServer.Firebase.JsonStructures
+namespace CaiqueServer.Firebase.Json
 {
     /// <summary>
     /// <para>This is a message sent from the XMPP connection server to an app server. Here are the primary types of messages that the XMPP connection server sends to the app server:</para>

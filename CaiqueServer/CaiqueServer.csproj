@@ -124,13 +124,13 @@
   <ItemGroup>
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />
-    <Compile Include="Firebase\JsonStructures\User.cs" />
+    <Compile Include="Firebase\Json\User.cs" />
     <Compile Include="Firebase\Messaging.cs" />
-    <Compile Include="Firebase\JsonStructures\ServerMessage.cs" />
-    <Compile Include="Firebase\JsonStructures\UpstreamMessage.cs" />
-    <Compile Include="Firebase\JsonStructures\ReceivedMessageAck.cs" />
-    <Compile Include="Firebase\JsonStructures\SendMessage.cs" />
-    <Compile Include="Firebase\JsonStructures\SentMessageAck.cs" />
+    <Compile Include="Firebase\Json\ServerMessage.cs" />
+    <Compile Include="Firebase\Json\UpstreamMessage.cs" />
+    <Compile Include="Firebase\Json\ReceivedMessageAck.cs" />
+    <Compile Include="Firebase\Json\SendMessage.cs" />
+    <Compile Include="Firebase\Json\SentMessageAck.cs" />
     <Compile Include="Firebase\Database.cs" />
     <Compile Include="Firebase\MessagingHandlers.cs" />
     <Compile Include="Music\Streamer.cs" />

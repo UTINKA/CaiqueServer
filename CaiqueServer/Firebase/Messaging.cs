@@ -2,7 +2,7 @@
 using agsXMPP.Net;
 using agsXMPP.protocol.client;
 using agsXMPP.Xml.Dom;
-using CaiqueServer.Firebase.JsonStructures;
+using CaiqueServer.Firebase.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;

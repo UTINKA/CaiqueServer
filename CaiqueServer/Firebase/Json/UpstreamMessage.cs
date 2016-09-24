@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace CaiqueServer.Firebase.JsonStructures
+namespace CaiqueServer.Firebase.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
     class UpstreamMessage

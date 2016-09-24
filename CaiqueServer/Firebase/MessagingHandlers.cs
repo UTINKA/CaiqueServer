@@ -1,4 +1,4 @@
-﻿using CaiqueServer.Firebase.JsonStructures;
+﻿using CaiqueServer.Firebase.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
