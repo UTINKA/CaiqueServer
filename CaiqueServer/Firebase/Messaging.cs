@@ -59,58 +59,71 @@ namespace CaiqueServer.Firebase
 
         internal static ConcurrentDictionary<long, SendMessage> WaitAck = new ConcurrentDictionary<long, SendMessage>();
         internal static int Acks = 0;
+        internal static int Saves = 0;
 
         private static async void OnMessage(object s, Message msg)
         {
-            var JData = JObject.Parse(msg.FirstChild.Value);
-
-            if (JData["message_type"] == null)
+            try
             {
-                var Message = JData.ToObject<UpstreamMessage>();
-                Send(new ReceivedMessageAck
-                {
-                    To = Message.From,
-                    MessageId = Message.MessageId,
-                    MessageType = "ack"
-                });
+                var JData = JObject.Parse(msg.FirstChild.Value);
 
-                await MessagingHandlers.Upstream(Message);
-            }
-            else if (JData["message_type"].ToString().EndsWith("ack"))
-            {
-                var SentAck = JData.ToObject<SentMessageAck>();
-                int MessageId;
-                if (int.TryParse(SentAck.MessageId, out MessageId) && WaitAck.ContainsKey(MessageId))
+                if (JData["message_type"] == null)
                 {
-                    if (SentAck.MessageType == "ack")
+                    var Message = JData.ToObject<UpstreamMessage>();
+                    Send(new ReceivedMessageAck
                     {
-                        Interlocked.Increment(ref Acks);
-                        WaitAck.TryRemove(MessageId);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Message " + MessageId + " status " + SentAck.MessageType + " - trying again in 1.5s");
+                        To = Message.From,
+                        MessageId = Message.MessageId,
+                        MessageType = "ack"
+                    });
 
+                    MessagingHandlers.Upstream(Message);
+                }
+                else if (JData["message_type"].ToString().EndsWith("ack"))
+                {
+                    var SentAck = JData.ToObject<SentMessageAck>();
+                    int MessageId;
+                    if (int.TryParse(SentAck.MessageId, out MessageId) && WaitAck.ContainsKey(MessageId))
+                    {
                         SendMessage Out;
-                        if (WaitAck.TryGetValue(MessageId, out Out))
+                        if (SentAck.MessageType == "ack")
                         {
-                            await Task.Delay(1500);
-                            Resend(Out);
+                            Interlocked.Increment(ref Acks);
+                            if (WaitAck.TryRemove(MessageId, out Out))
+                            {
+                                var Response = await Database.Client.PushAsync($"message", Out.Data).ConfigureAwait(false);
+                                await Database.Client.SetAsync($"chat/{Out.To.Split('-')[1]}/{Response.Result.Name}", true).ConfigureAwait(false);
+                                Interlocked.Increment(ref Saves);
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Message " + MessageId + " status " + SentAck.MessageType + " - trying again in 1.5s");
+
+                            if (WaitAck.TryGetValue(MessageId, out Out))
+                            {
+                                await Task.Delay(1500);
+                                Resend(Out);
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                var Message = JData.ToObject<ServerMessage>();
-                Send(new ReceivedMessageAck
+                else
                 {
-                    To = Message.From,
-                    MessageId = Message.MessageId,
-                    MessageType = "ack"
-                });
-                
-                MessagingHandlers.Server(Message);
+                    var Message = JData.ToObject<ServerMessage>();
+                    Send(new ReceivedMessageAck
+                    {
+                        To = Message.From,
+                        MessageId = Message.MessageId,
+                        MessageType = "ack"
+                    });
+
+                    MessagingHandlers.Server(Message);
+                }
+            }
+            catch (Exception Ex)
+            {
+                Console.WriteLine("Message Handler Exception\r\n" + msg + "\r\n" + Ex);
             }
         }
 
@@ -118,19 +131,15 @@ namespace CaiqueServer.Firebase
         {
             Console.WriteLine(ex.ToString());
         }
+
+        private static long Unique = 0;
         
-        internal static long Send(SendMessage ToSend)
+        internal static void Send(SendMessage ToSend)
         {
-            var UniqueId = Database.MessageId;
-
-            Task.Run(delegate
-            {
-                ToSend.MessageId = UniqueId.ToString();
-                WaitAck.TryAdd(UniqueId, ToSend);
-                Send((object)ToSend);
-            });
-
-            return UniqueId;
+            var UniqueId = Interlocked.Increment(ref Unique);
+            ToSend.MessageId = UniqueId.ToString();
+            WaitAck.TryAdd(UniqueId, ToSend);
+            Send((object)ToSend);
         }
 
         internal static void Resend(SendMessage ToSend)

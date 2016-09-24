@@ -9,7 +9,6 @@ namespace CaiqueServer
         static void Main(string[] args)
         {
             Console.Title = "Caique Server";
-            var DbConnecter = Firebase.Database.Load();
 
             var ProcessStartInfo = new System.Diagnostics.ProcessStartInfo
             {
@@ -23,8 +22,7 @@ namespace CaiqueServer
             Ffmpeg.PriorityClass = System.Diagnostics.ProcessPriorityClass.AboveNormal;
 
             Console.WriteLine("Icecast server started");
-
-            DbConnecter.Wait();
+            
             if (!Firebase.Messaging.Start().Result)
             {
                 Console.WriteLine("Auth Error!");
@@ -48,7 +46,7 @@ namespace CaiqueServer
             {
                 while (true)
                 {
-                    Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count;
+                    Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count + " " + Firebase.Messaging.Saves;
                     await Task.Delay(100);
                 }
             });
@@ -78,9 +76,7 @@ namespace CaiqueServer
 
             Console.WriteLine("Start spam");
 
-            var List = new Task[200];
-
-            for (int i = 0; i < List.Length; i++)
+            for (int i = 0; i < 200; i++)
             {
                 var Msg = new Firebase.Json.DatabaseMessage
                 {
@@ -92,16 +88,14 @@ namespace CaiqueServer
                     Attachment = i
                 };
 
-                List[i] = Chat.Home.ById(i % 10).Distribute(Msg);
+                Chat.Home.ById(i % 10).Distribute(Msg);
             }
-
-            Task.WaitAll(List);
+            
             Console.WriteLine("Boot");
 
             while (true)
             {
                 Task.Delay(1000).Wait();
-                //Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count;
             }
         }
     }

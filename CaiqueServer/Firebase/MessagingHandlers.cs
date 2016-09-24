@@ -2,13 +2,12 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Threading.Tasks;
 
 namespace CaiqueServer.Firebase
 {
     class MessagingHandlers
     {
-        public static async Task Upstream(UpstreamMessage In)
+        public static void Upstream(UpstreamMessage In)
         {
             var Sender = Database.Client.Get($"token/{In.From}").ResultAs<DatabaseToken>();
             if (Sender == null)
@@ -27,12 +26,12 @@ namespace CaiqueServer.Firebase
 
                     if (Message.Type == "text")
                     {
-                        await Chat.Home.ById(Message.Chat).Distribute(Message);
+                        Chat.Home.ById(Message.Chat).Distribute(Message);
                     }
                     else if (Message.Type == "update")
                     {
                         var Update = JsonConvert.DeserializeObject<DatabaseChat>(Message.Text);
-                        await Chat.Home.ById(Message.Chat).Distribute(Message);
+                        Chat.Home.ById(Message.Chat).Distribute(Message);
                     }
                     else
                     {
