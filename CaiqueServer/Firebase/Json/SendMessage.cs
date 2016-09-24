@@ -90,7 +90,8 @@ namespace CaiqueServer.Firebase.Json
         /// <para>Values in string types are recommended. You have to convert values in objects or other non-string data types (e.g., integers or booleans) to string.</para>
         /// </summary>
         [JsonProperty("data", Required = Required.Default)]
-        public JObject Data { get; set; }
+        //public JObject Data { get; set; }
+        public object Data { get; set; }
 
         [JsonObject(MemberSerialization.OptIn)]
         public class NotificationPayload

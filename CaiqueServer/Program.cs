@@ -1,6 +1,5 @@
 ﻿using CaiqueServer.Music;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace CaiqueServer
@@ -45,61 +44,64 @@ namespace CaiqueServer
                 Task.Delay(100).Wait();
             });
 
+            Task.Run(async delegate
+            {
+                while (true)
+                {
+                    Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count;
+                    await Task.Delay(100);
+                }
+            });
+
             /*var Song = Songdata.Search("Nano Gallows Bell")[1];
-            var Rand = new Random();
-            */
-            var UpdateData = new Newtonsoft.Json.Linq.JObject();
-            UpdateData["content"] = "Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!Test message sent from the server!";
-            UpdateData["user"] = "Amir Zaidi";
-            UpdateData["utctime"] = "1474402074";
-            /*
             for (int i = 0; i < 10; i++)
             {
                 Streamer.Get(i).Enqueue(Song);
             }*/
 
-            Console.WriteLine("Booted!");
 
-            /*while (true)
+            //ToDo: Automate this IN THE APP
+            var KlteToken = "c-AxRCHxqH4:APA91bEl7bgursLXdnuOGRnvPk83_X0E-WrKkA-4cxGYsaysVKXAj-s69mY6UjmuF2D6y3FqPCjX3I0k8FCLRjfrI-n8HhjJuQG3O58WGkf9HiqJJzvIocuvkLUaiXJnmtA7e2DbRL0u";
+
+            Firebase.Database.Client.Set("user/2", new Firebase.Json.DatabaseUser
             {
-                Firebase.Database.Client.Delete("users");
-                Firebase.Database.Client.Set("users/1", new Firebase.JsonStructures.User
-                {
-                    Mail = "amirzaidiamirzaidi@gmail.com",
-                    Token = "eGFRIQbqVk0:APA91bEr5lb5TMB9lNEacZSOGEpOkFZsRuhcF-GzakhussyYBhcZZ5NiGc0qKaZ6qDpsjeh_vyhhFqE6LNJd4dpaO-vd36fR3HJ5ThcYoyX7MgfFvF44tD94qkjz4yQx7lrIqcpPybuv",
-                    Name = "Amir AVD"
-                });
+                Mail = "amirzaidi1999@gmail.com",
+                Token = KlteToken,
+                Name = "Amir Zaidi"
+            });
 
-                Firebase.Database.Client.Set("users/2", new Firebase.JsonStructures.User
-                {
-                    Mail = "amirzaidi1999@gmail.com",
-                    Token = "c-AxRCHxqH4:APA91bEl7bgursLXdnuOGRnvPk83_X0E-WrKkA-4cxGYsaysVKXAj-s69mY6UjmuF2D6y3FqPCjX3I0k8FCLRjfrI-n8HhjJuQG3O58WGkf9HiqJJzvIocuvkLUaiXJnmtA7e2DbRL0u",
-                    Name = "Amir S5"
-                });
-                Console.WriteLine(Firebase.Database.Client.Get("users/1").ResultAs<Firebase.JsonStructures.User>().Name);
-                Console.WriteLine(Firebase.Database.Client.Get("users/2").ResultAs<Firebase.JsonStructures.User>().Name);
-                Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count + " " + Firebase.Messaging.Sent;
-            }*/
-
-            for (int i = 0; i < 5; i++)
+            Firebase.Database.Client.Set("token/" + KlteToken, new Firebase.Json.DatabaseToken
             {
-                for (int j = 0; j < 32; j++)
-                {
-                    Firebase.Messaging.Send(new Firebase.JsonStructures.SendMessage
-                    {
-                        To = $"/topics/chat-{i}-{j}",
-                        Data = UpdateData
-                    });
-                }
+                Id = 2
+            });
 
-                Task.Delay(1000).Wait();
-                Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count + " " + Firebase.Messaging.Sent;
+
+            Console.WriteLine("Start spam");
+
+            var List = new Task[200];
+
+            for (int i = 0; i < List.Length; i++)
+            {
+                var Msg = new Firebase.Json.DatabaseMessage
+                {
+                    Chat = i % 10,
+                    Sender = 2,
+                    Type = "text",
+                    Text = "Hi!",
+                    Date = 1474402074,
+                    Attachment = i
+                };
+
+                List[i] = Chat.Home.ById(i % 10).Distribute(Msg);
             }
+
+            Task.WaitAll(List);
+            Console.WriteLine("Boot");
 
             while (true)
             {
                 Task.Delay(1000).Wait();
-                Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count + " " + Firebase.Messaging.Sent;
+                //Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count;
             }
         }
     }

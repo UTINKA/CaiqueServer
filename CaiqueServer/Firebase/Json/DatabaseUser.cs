@@ -3,7 +3,7 @@
 namespace CaiqueServer.Firebase.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
-    class User
+    class DatabaseUser
     {
         [JsonProperty("mail", Required = Required.Always)]
         public string Mail;

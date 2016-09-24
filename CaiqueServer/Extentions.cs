@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -64,6 +65,12 @@ namespace CaiqueServer
             }
 
             return string.Empty;
+        }
+
+        public static bool TryRemove<P, Q>(this ConcurrentDictionary<P, Q> In, P Key)
+        {
+            Q Out;
+            return In.TryRemove(Key, out Out);
         }
     }
 }

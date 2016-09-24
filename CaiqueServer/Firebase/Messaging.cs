@@ -6,7 +6,7 @@ using CaiqueServer.Firebase.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,12 +57,10 @@ namespace CaiqueServer.Firebase
             await T.Task;
         }
 
-        internal static Dictionary<int, SendMessage> WaitAck = new Dictionary<int, SendMessage>();
-        internal static int StaticMessageId = 0;
+        internal static ConcurrentDictionary<long, SendMessage> WaitAck = new ConcurrentDictionary<long, SendMessage>();
         internal static int Acks = 0;
-        internal static int Sent = 0;
 
-        private static void OnMessage(object s, Message msg)
+        private static async void OnMessage(object s, Message msg)
         {
             var JData = JObject.Parse(msg.FirstChild.Value);
 
@@ -76,7 +74,7 @@ namespace CaiqueServer.Firebase
                     MessageType = "ack"
                 });
 
-                MessagingHandlers.Upstream(Message);
+                await MessagingHandlers.Upstream(Message);
             }
             else if (JData["message_type"].ToString().EndsWith("ack"))
             {
@@ -87,20 +85,19 @@ namespace CaiqueServer.Firebase
                     if (SentAck.MessageType == "ack")
                     {
                         Interlocked.Increment(ref Acks);
+                        WaitAck.TryRemove(MessageId);
                     }
                     else
                     {
-                        Interlocked.Decrement(ref Sent);
                         Console.WriteLine("Message " + MessageId + " status " + SentAck.MessageType + " - trying again in 1.5s");
 
-                        var Message = WaitAck[MessageId];
-                        Task.Delay(1500).ContinueWith(delegate
+                        SendMessage Out;
+                        if (WaitAck.TryGetValue(MessageId, out Out))
                         {
-                            Send(Message);
-                        });
+                            await Task.Delay(1500);
+                            Resend(Out);
+                        }
                     }
-
-                    WaitAck.Remove(MessageId);
                 }
             }
             else
@@ -121,14 +118,25 @@ namespace CaiqueServer.Firebase
         {
             Console.WriteLine(ex.ToString());
         }
-
-        internal static void Send(SendMessage ToSend)
+        
+        internal static long Send(SendMessage ToSend)
         {
-            var MessageId = Interlocked.Increment(ref Messaging.StaticMessageId);
-            ToSend.MessageId = MessageId.ToString();
-            WaitAck.Add(MessageId, ToSend);
+            var UniqueId = Database.MessageId;
+
+            Task.Run(delegate
+            {
+                ToSend.MessageId = UniqueId.ToString();
+                WaitAck.TryAdd(UniqueId, ToSend);
+                Send((object)ToSend);
+            });
+
+            return UniqueId;
+        }
+
+        internal static void Resend(SendMessage ToSend)
+        {
+            WaitAck.TryAdd(long.Parse(ToSend.MessageId), ToSend);
             Send((object)ToSend);
-            Interlocked.Increment(ref Sent);
         }
 
         private static void Send(object JsonObject)

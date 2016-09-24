@@ -122,9 +122,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chat\Home.cs" />
+    <Compile Include="Firebase\Json\DatabaseChat.cs" />
+    <Compile Include="Firebase\Json\DatabaseMessage.cs" />
+    <Compile Include="Chat\Room.cs" />
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />
-    <Compile Include="Firebase\Json\User.cs" />
+    <Compile Include="Firebase\Json\DatabaseToken.cs" />
+    <Compile Include="Firebase\Json\DatabaseUser.cs" />
     <Compile Include="Firebase\Messaging.cs" />
     <Compile Include="Firebase\Json\ServerMessage.cs" />
     <Compile Include="Firebase\Json\UpstreamMessage.cs" />
@@ -235,6 +240,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />
   <Target Name="EnsureBclBuildImported" BeforeTargets="BeforeBuild" Condition="'$(BclBuildImported)' == ''">
