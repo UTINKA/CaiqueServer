@@ -6,16 +6,17 @@ using CaiqueServer.Firebase.JsonStructures;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Text;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CaiqueServer.Firebase
 {
-    class CloudMessaging
+    class Messaging
     {
         static XmppClientConnection Xmpp;
 
-        static CloudMessaging()
+        static Messaging()
         {
             Xmpp = new XmppClientConnection
             {
@@ -34,9 +35,7 @@ namespace CaiqueServer.Firebase
                 UseCompression = false,
                 Show = ShowType.chat
             };
-
-            Xmpp.OnReadSocketData += OnReadSocketData;
-            Xmpp.OnWriteSocketData += OnWriteSocketData;
+            
             Xmpp.OnMessage += OnMessage;
             Xmpp.OnError += OnError;
         }
@@ -58,17 +57,10 @@ namespace CaiqueServer.Firebase
             await T.Task;
         }
 
-        private static void OnWriteSocketData(object s, byte[] data, int count)
-        {
-            //var text = Encoding.ASCII.GetString(data, 0, count);
-            //Console.WriteLine("-- Out " + text);
-        }
-
-        private static void OnReadSocketData(object s, byte[] data, int count)
-        {
-            //var text = Encoding.ASCII.GetString(data, 0, count);
-            //Console.WriteLine("-- In " + text);
-        }
+        internal static Dictionary<int, SendMessage> WaitAck = new Dictionary<int, SendMessage>();
+        internal static int StaticMessageId = 0;
+        internal static int Acks = 0;
+        internal static int Sent = 0;
 
         private static void OnMessage(object s, Message msg)
         {
@@ -84,11 +76,32 @@ namespace CaiqueServer.Firebase
                     MessageType = "ack"
                 });
 
-                MessageHandlers.Upstream(Message);
+                MessagingHandlers.Upstream(Message);
             }
             else if (JData["message_type"].ToString().EndsWith("ack"))
             {
-                MessageHandlers.SentAck(JData.ToObject<SentMessageAck>());
+                var SentAck = JData.ToObject<SentMessageAck>();
+                int MessageId;
+                if (int.TryParse(SentAck.MessageId, out MessageId) && WaitAck.ContainsKey(MessageId))
+                {
+                    if (SentAck.MessageType == "ack")
+                    {
+                        Interlocked.Increment(ref Acks);
+                    }
+                    else
+                    {
+                        Interlocked.Decrement(ref Sent);
+                        Console.WriteLine("Message " + MessageId + " status " + SentAck.MessageType + " - trying again in 1.5s");
+
+                        var Message = WaitAck[MessageId];
+                        Task.Delay(1500).ContinueWith(delegate
+                        {
+                            Send(Message);
+                        });
+                    }
+
+                    WaitAck.Remove(MessageId);
+                }
             }
             else
             {
@@ -100,7 +113,7 @@ namespace CaiqueServer.Firebase
                     MessageType = "ack"
                 });
                 
-                MessageHandlers.Server(Message);
+                MessagingHandlers.Server(Message);
             }
         }
 
@@ -109,7 +122,16 @@ namespace CaiqueServer.Firebase
             Console.WriteLine(ex.ToString());
         }
 
-        internal static void Send(object JsonObject)
+        internal static void Send(SendMessage ToSend)
+        {
+            var MessageId = Interlocked.Increment(ref Messaging.StaticMessageId);
+            ToSend.MessageId = MessageId.ToString();
+            WaitAck.Add(MessageId, ToSend);
+            Send((object)ToSend);
+            Interlocked.Increment(ref Sent);
+        }
+
+        private static void Send(object JsonObject)
         {
             var Gcm = new Element
             {
