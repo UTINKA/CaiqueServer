@@ -73,7 +73,7 @@ namespace CaiqueServer
 
             Console.WriteLine("Start spam");
 
-            for (int i = 0; i < 50; i++)
+            for (int i = 0; i < 20; i++)
             {
                 var ChatId = i % 10;
 
@@ -92,8 +92,10 @@ namespace CaiqueServer
 
             for (int i = 0; i < 10; i++)
             {
-                Streamer.Get(i).Enqueue("trash candy");
+                //Streamer.Get(i).Enqueue("macintosh plus vaporwave");
             }
+
+            Streamer.Get(1).Enqueue("macintosh plus vaporwave");
 
             while (true)
             {

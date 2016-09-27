@@ -121,7 +121,7 @@ namespace CaiqueServer.Music
 
             while (!Stop.IsCancellationRequested && Queue.TryDequeue(out Song))
             {
-                ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl.SafePath()}\" -vn -content_type audio/aac -f adts ";
+                ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -content_type audio/aac -f adts ";
                 if (Song.Type == SongType.YouTube)
                 {
                     ProcessStartInfo.Arguments += "-c:a copy ";
@@ -130,7 +130,7 @@ namespace CaiqueServer.Music
                 {
                     ProcessStartInfo.Arguments += $"-c:a aac -b:a 128k -ac 2 -ar 48k ";
                 }
-                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 -ice_name \"{Song.FullName.SafePath()}\" icecast://source:{IcecastPass}@localhost:8000/{Id}";
+                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 icecast://source:{IcecastPass}@localhost:8000/{Id}";
                 
                 using (var Ffmpeg = new Process())
                 {

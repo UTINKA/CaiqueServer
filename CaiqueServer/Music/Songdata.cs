@@ -63,31 +63,18 @@ namespace CaiqueServer.Music
                     var Videos = YouTube.Default.GetAllVideos(Url);
                     
                     YouTubeVideo MaxVid = null;
-                    foreach (var Vid in Videos)
+                    foreach (var Vid in Videos.Where(Video => Video.AudioFormat == AudioFormat.Aac))
                     {
                         if (Vid.AudioBitrate == 192)
                         {
                             return Vid.Uri;
                         }
 
-                        if (MaxVid == null || Vid.AudioBitrate > MaxVid.AudioBitrate)
+                        if (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate)
                         {
                             MaxVid = Vid;
                         }
                     }
-
-                    /*var Adaptive = Videos.Where(Video => Video.AdaptiveKind != AdaptiveKind.Audio);
-                    if (Adaptive.Count() > 0)
-                    {
-                        Videos = Adaptive;
-                    }
-
-                    Videos = Videos.OrderByDescending(v => v.AudioBitrate);
-
-                    if (Videos.Count() > 0)
-                    {
-                        return Videos.First().Uri;
-                    }*/
 
                     return MaxVid.Uri;
                 }
@@ -101,7 +88,6 @@ namespace CaiqueServer.Music
                 }
                 else if (Type == SongType.Uploaded)
                 {
-                    
                 }
 
                 return Url;

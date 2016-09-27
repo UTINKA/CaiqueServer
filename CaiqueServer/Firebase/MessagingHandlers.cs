@@ -58,6 +58,10 @@ namespace CaiqueServer.Firebase
                             Data = new { r = Music.Songdata.Search(Event.Text) }
                         });
                     }
+                    else if (Event.Type == "mskip")
+                    {
+                        Music.Streamer.Get(Event.Chat).Skip();
+                    }
                     else
                     {
                         if (Event.Type == "update")
@@ -68,10 +72,6 @@ namespace CaiqueServer.Firebase
                         else if (Event.Type == "madd")
                         {
                             Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
-                        }
-                        else if (Event.Type == "mskip")
-                        {
-                            Music.Streamer.Get(Event.Chat).Skip();
                         }
 
                         Chat.Home.ById(Event.Chat).Distribute(Event);
