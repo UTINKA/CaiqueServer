@@ -122,7 +122,7 @@
   <ItemGroup>
     <Compile Include="Chat\Home.cs" />
     <Compile Include="Firebase\Json\DatabaseChat.cs" />
-    <Compile Include="Firebase\Json\DatabaseMessage.cs" />
+    <Compile Include="Firebase\Json\Event.cs" />
     <Compile Include="Chat\Room.cs" />
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />

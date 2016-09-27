@@ -1,6 +1,5 @@
 ﻿using CaiqueServer.Firebase;
 using CaiqueServer.Firebase.Json;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,13 +21,14 @@ namespace CaiqueServer.Chat
             await Database.Client.SetAsync($"topics/{Topic}/info", Info);
         }
         
-        internal void Distribute(DatabaseMessage Message)
+        internal void Distribute(Event Event, string Priority = "normal")
         {
             var SubTopic = Interlocked.Increment(ref Roulette) % MaxRoulette;
             Messaging.Send(new SendMessage
             {
                 To = $"/topics/chat-{Topic}-{SubTopic}",
-                Data = Message
+                Data = Event,
+                Priority = Priority
             });
         }
     }

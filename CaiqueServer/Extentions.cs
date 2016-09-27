@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -9,6 +8,11 @@ namespace CaiqueServer
 {
     static class Extentions
     {
+        public static string SafePath(this string In)
+        {
+            return In.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
         public static Task ConnectAsync(this Socket Connection, IPEndPoint EndPoint)
         {
             return Task.Factory.FromAsync(Connection.BeginConnect(EndPoint, null, null), Connection.EndConnect);
@@ -24,21 +28,6 @@ namespace CaiqueServer
             return Task.Factory.FromAsync(Connection.BeginDisconnect(false, null, null), Connection.EndDisconnect);
         }
 
-        public static string MaxSubstring(this string Source, int MaxLength, string Add = "")
-        {
-            if (Source.Length < MaxLength)
-            {
-                return Source;
-            }
-
-            return Source.Substring(0, MaxLength - Add.Length) + Add;
-        }
-
-        public static string Substring(this string Source, string Trim)
-        {
-            return Source.Substring(Trim.Length);
-        }
-
         public static bool IsValidUrl(this string Text)
         {
             Uri WebRes;
@@ -47,7 +36,7 @@ namespace CaiqueServer
 
         public static async Task<string> WebResponse(this string Url, WebHeaderCollection Headers = null)
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 10; i++)
             {
                 try
                 {
@@ -65,12 +54,6 @@ namespace CaiqueServer
             }
 
             return string.Empty;
-        }
-
-        public static bool TryRemove<P, Q>(this ConcurrentDictionary<P, Q> In, P Key)
-        {
-            Q Out;
-            return In.TryRemove(Key, out Out);
         }
     }
 }

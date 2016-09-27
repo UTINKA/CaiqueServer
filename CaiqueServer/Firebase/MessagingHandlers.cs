@@ -18,33 +18,64 @@ namespace CaiqueServer.Firebase
             {
                 try
                 {
-                    var Message = In.Data.ToObject<DatabaseMessage>();
-                    Message.Sender = Sender.Id;
+                    var Event = In.Data.ToObject<Event>();
+                    Event.Sender = Sender.Id;
 
                     var User = Database.Client.Get($"user/{Sender.Id}").ResultAs<DatabaseUser>();
-                    Console.WriteLine("-- Upstream from " + User.Name + " " + JsonConvert.SerializeObject(Message));
+                    Console.WriteLine("-- Upstream from " + User.Name + " " + JsonConvert.SerializeObject(In.Data));
 
-                    if (Message.Type == "text")
+                    if (Event.Type == "text")
                     {
-                        Chat.Home.ById(Message.Chat).Distribute(Message);
+                        Chat.Home.ById(Event.Chat).Distribute(Event, "high");
                     }
-                    else if (Message.Type == "update")
+                    else if (Event.Type == "reg")
                     {
-                        var Update = JsonConvert.DeserializeObject<DatabaseChat>(Message.Text);
-                        Chat.Home.ById(Message.Chat).Distribute(Message);
-                    }
-                    else
-                    {
-                        //Personal?
-
                         var ResponseData = new JObject();
-                        ResponseData["list"] = "yes";
+                        ResponseData["received"] = "Registration";
 
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
                             Data = ResponseData
                         });
+                    }
+                    else if (Event.Type == "profile")
+                    {
+                        var ResponseData = new JObject();
+                        ResponseData["received"] = "Profile Update";
+
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = ResponseData
+                        });
+                    }
+                    else if (Event.Type == "msearch")
+                    {
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = new { r = Music.Songdata.Search(Event.Text) }
+                        });
+                    }
+                    else
+                    {
+                        if (Event.Type == "update")
+                        {
+                            var Update = JsonConvert.DeserializeObject<DatabaseChat>(Event.Text);
+                            //ToDo: Update DB
+                        }
+                        else if (Event.Type == "madd")
+                        {
+                            Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
+                        }
+                        else if (Event.Type == "mskip")
+                        {
+                            Music.Streamer.Get(Event.Chat).Skip();
+                        }
+
+                        Chat.Home.ById(Event.Chat).Distribute(Event);
+                        //Personal?
                     }
                 }
                 catch (Exception Ex)

@@ -1,5 +1,6 @@
 ﻿using CaiqueServer.Music;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace CaiqueServer
@@ -10,7 +11,7 @@ namespace CaiqueServer
         {
             Console.Title = "Caique Server";
 
-            var ProcessStartInfo = new System.Diagnostics.ProcessStartInfo
+            var ProcessStartInfo = new ProcessStartInfo
             {
                 FileName = "Includes/icecast.exe",
                 Arguments = "-c Includes/icecast.xml",
@@ -18,8 +19,8 @@ namespace CaiqueServer
                 RedirectStandardOutput = false
             };
 
-            var Ffmpeg = System.Diagnostics.Process.Start(ProcessStartInfo);
-            Ffmpeg.PriorityClass = System.Diagnostics.ProcessPriorityClass.AboveNormal;
+            var IcecastProcess = Process.Start(ProcessStartInfo);
+            IcecastProcess.PriorityClass = ProcessPriorityClass.AboveNormal;
 
             Console.WriteLine("Icecast server started");
             
@@ -35,11 +36,8 @@ namespace CaiqueServer
                 var StopFCM = Firebase.Messaging.Stop();
                 Firebase.Database.Stop();
                 Streamer.Shutdown();
+                IcecastProcess.Dispose();
                 StopFCM.Wait();
-                Ffmpeg.Dispose();
-
-                Console.WriteLine("Shutdown complete");
-                Task.Delay(100).Wait();
             });
 
             Task.Run(async delegate
@@ -50,13 +48,6 @@ namespace CaiqueServer
                     await Task.Delay(100);
                 }
             });
-
-            /*var Song = Songdata.Search("Nano Gallows Bell")[1];
-            for (int i = 0; i < 10; i++)
-            {
-                Streamer.Get(i).Enqueue(Song);
-            }*/
-
 
             //ToDo: Automate this IN THE APP
             var KlteToken = "c-AxRCHxqH4:APA91bEl7bgursLXdnuOGRnvPk83_X0E-WrKkA-4cxGYsaysVKXAj-s69mY6UjmuF2D6y3FqPCjX3I0k8FCLRjfrI-n8HhjJuQG3O58WGkf9HiqJJzvIocuvkLUaiXJnmtA7e2DbRL0u";
@@ -72,26 +63,37 @@ namespace CaiqueServer
             {
                 Id = 2
             });
-
+            
+            Firebase.Database.Client.Set("chat/0", new Firebase.Json.DatabaseChat
+            {
+                Title = "Test Chat",
+                Tags = new[] { "test", "programming" },
+                Picture = 5
+            });
 
             Console.WriteLine("Start spam");
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 50; i++)
             {
-                var Msg = new Firebase.Json.DatabaseMessage
+                var ChatId = i % 10;
+
+                Chat.Home.ById(ChatId).Distribute(new Firebase.Json.Event
                 {
-                    Chat = i % 10,
+                    Chat = ChatId,
                     Sender = 2,
                     Type = "text",
                     Text = "Hi!",
                     Date = 1474402074,
                     Attachment = i
-                };
-
-                Chat.Home.ById(i % 10).Distribute(Msg);
+                }, "high");
             }
             
             Console.WriteLine("Boot");
+
+            for (int i = 0; i < 50; i++)
+            {
+                Streamer.Get(i).Enqueue("trash candy");
+            }
 
             while (true)
             {

@@ -1,13 +1,12 @@
 ﻿using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using VideoLibrary;
 
 namespace CaiqueServer.Music
@@ -21,6 +20,7 @@ namespace CaiqueServer.Music
         Uploaded
     }
 
+    [JsonObject(MemberSerialization.OptIn)]
     struct Songdata
     {
         internal static YouTubeService YT;
@@ -48,8 +48,12 @@ namespace CaiqueServer.Music
             }
         }
 
+        [JsonProperty("name", Required = Required.Always)]
         internal string FullName;
+
+        [JsonProperty("url", Required = Required.Always)]
         internal string Url;
+
         internal string StreamUrl
         {
             get
@@ -103,7 +107,11 @@ namespace CaiqueServer.Music
                 return Url;
             }
         }
+
+        [JsonProperty("type", Required = Required.Always)]
         internal SongType Type;
+
+        [JsonProperty("tn", Required = Required.Default)]
         internal string Thumbnail;
 
         internal static readonly Regex YoutubeVideoRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);

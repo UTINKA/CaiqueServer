@@ -91,9 +91,12 @@ namespace CaiqueServer.Firebase
                             Interlocked.Increment(ref Acks);
                             if (WaitAck.TryRemove(MessageId, out Out))
                             {
-                                var Response = await Database.Client.PushAsync($"message", Out.Data).ConfigureAwait(false);
-                                await Database.Client.SetAsync($"chat/{Out.To.Split('-')[1]}/{Response.Result.Name}", true).ConfigureAwait(false);
-                                Interlocked.Increment(ref Saves);
+                                if (Out.Priority == "high")
+                                {
+                                    var Response = await Database.Client.PushAsync($"message", Out.Data).ConfigureAwait(false);
+                                    await Database.Client.SetAsync($"chat/{Out.To.Split('-')[1]}/{Response.Result.Name}", true).ConfigureAwait(false);
+                                    Interlocked.Increment(ref Saves);
+                                }
                             }
                         }
                         else

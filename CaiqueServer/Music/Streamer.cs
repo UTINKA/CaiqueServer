@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -42,41 +40,16 @@ namespace CaiqueServer.Music
 
         internal Songdata Song;
         private ConcurrentQueue<Songdata> Queue = new ConcurrentQueue<Songdata>();
-        internal const int MaxQueued = 16;
+        private const int MaxQueued = 16;
+        
+        internal TaskCompletionSource<bool> Process;
+        private TaskCompletionSource<bool> WaitAdd;
 
-        internal CancellationTokenSource Skip = new CancellationTokenSource();
-        private TaskCompletionSource<bool> EmptyQueue;
-
-        private string Link;
-        private string PlaylistFile
-        {
-            get
-            {
-                return $"{Link}.playlist";
-            }
-        }
+        private long Id;
 
         internal Streamer(long Id)
         {
-            Link = "stream" + (++Id).ToString();
-
-            if (File.Exists(PlaylistFile))
-            {
-                using (var Reader = new BinaryReader(File.Open(PlaylistFile, FileMode.Open)))
-                {
-                    var Count = Reader.ReadInt32();
-                    for (int i = 0; i < Count; i++)
-                    {
-                        Queue.Enqueue(new Songdata
-                        {
-                            FullName = Reader.ReadString(),
-                            Url = Reader.ReadString(),
-                            Type = (SongType)Reader.ReadInt32(),
-                            Thumbnail = Reader.ReadString()
-                        });
-                    }
-                }
-            }
+            this.Id = Id;
 
             var Reset = new ManualResetEvent(false);
             ShutdownCompleted.Add(Reset);
@@ -86,126 +59,109 @@ namespace CaiqueServer.Music
             });
         }
 
-        internal void Enqueue(Songdata Song)
+        internal bool Enqueue(string Song)
         {
+            var Results = Songdata.Search(Song, 1);
+            if (Results.Count == 0)
+            {
+                return false;
+            }
+
+            return Enqueue(Results[0]);
+        }
+
+        internal bool Enqueue(Songdata Song)
+        {
+            if (Queue.Count >= MaxQueued)
+            {
+                return false;
+            }
+
             Queue.Enqueue(Song);
-            EmptyQueue?.TrySetResult(true);
+            WaitAdd?.TrySetResult(true);
+            return true;
+        }
+
+        internal void Skip()
+        {
+            Process?.TrySetCanceled();
         }
 
         private async Task BackgroundStream()
         {
-            await Task.Yield();
+            Console.WriteLine("Started background stream for " + Id);
 
-            while (!Stop.IsCancellationRequested)
+            while (true)
             {
-                Console.WriteLine("Started background stream " + Link);
-
                 try
                 {
-                    EmptyQueue = new TaskCompletionSource<bool>();
+                    WaitAdd = new TaskCompletionSource<bool>();
                     await StreamUntilQueueEmpty();
-                    await EmptyQueue.Task;
+                    await WaitAdd.Task;
                 }
                 catch (Exception Ex)
                 {
-                    Console.WriteLine(Link + " " + Ex.ToString());
+                    Console.WriteLine(Id + " " + Ex.ToString());
                 }
             }
         }
 
         private async Task StreamUntilQueueEmpty()
         {
-            using (var Client = new Socket(SocketType.Stream, ProtocolType.Tcp))
+            var ProcessStartInfo = new ProcessStartInfo
             {
-                await Client.ConnectAsync(EndPoint);
-                await Client.SendAsync(Encoding.ASCII.GetBytes("SOURCE /" + Link + @" ICE/1.0
-content-type: audio/aac
-Authorization: Basic " + IcecastAuth + @"
-ice-name: Radio
-ice-description: Stream
-ice-url: http://www.google.com
-ice-genre: All
-ice-private: 0
-ice-public: 1
-ice-audio-info: ice-samplerate=44100;ice-bitrate=128;ice-channels=2
+                FileName = "Includes/ffmpeg",
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true
+            };
 
-"));
-
-                using (var Output = new NetworkStream(Client))
+            while (!Stop.IsCancellationRequested && Queue.TryDequeue(out Song))
+            {
+                ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl.SafePath()}\" -vn -content_type audio/aac -f adts ";
+                if (Song.Type == SongType.YouTube)
                 {
-                    var ProcessStartInfo = new ProcessStartInfo
+                    ProcessStartInfo.Arguments += "-c:a copy ";
+                }
+                else
+                {
+                    ProcessStartInfo.Arguments += $"-c:a aac -b:a 128k -ac 2 -ar 48k ";
+                }
+                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 -ice_name \"{Song.FullName.SafePath()}\" icecast://source:{IcecastPass}@localhost:8000/{Id}";
+                
+                using (var Ffmpeg = new Process())
+                {
+                    Process = new TaskCompletionSource<bool>();
+
+                    try
                     {
-                        FileName = "Includes/ffmpeg",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true
-                    };
-
-                    while (!Stop.IsCancellationRequested && Queue.TryDequeue(out Song))
-                    {
-                        UpdateMetadataAndSave();
-
-                        //ProcessStartInfo.Arguments = $"-re -i includes/whitenoise.m4a -vn -codec:a copy -f adts -v quiet pipe:1";
-                        if (Song.Type == SongType.YouTube)
+                        Ffmpeg.StartInfo = ProcessStartInfo;
+                        Ffmpeg.EnableRaisingEvents = true;
+                        Ffmpeg.Exited += delegate
                         {
-                            ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a copy -f adts -v quiet pipe:1";
-                        }
-                        else
-                        {
-                            ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -c:a aac -b:a 128k -f adts -ac 2 -ar 48k -v quiet pipe:1";
-                        }
+                            Process.TrySetResult(true);
+                        };
 
-                        using (var Ffmpeg = Process.Start(ProcessStartInfo))
-                        using (var Input = Ffmpeg.StandardOutput.BaseStream)
-                        using (var Cancel = CancellationTokenSource.CreateLinkedTokenSource(Skip.Token, Stop.Token))
+                        Stop.Token.Register(delegate
                         {
-                            try
-                            {
-                                Ffmpeg.PriorityClass = ProcessPriorityClass.BelowNormal;
-                                await Input.CopyToAsync(Output, 81920, Cancel.Token);
-                            }
-                            catch (TaskCanceledException)
-                            {
-                                Skip = new CancellationTokenSource();
-                            }
-                        }
+                            Process.TrySetCanceled();
+                        });
+
+                        Ffmpeg.Start();
+                        Ffmpeg.PriorityClass = ProcessPriorityClass.BelowNormal;
+                        
+                        await Process.Task;
                     }
-                }
-            }
-        }
-
-        private async void UpdateMetadataAndSave()
-        {
-            try
-            {
-                using (var Writer = new BinaryWriter(File.Open(PlaylistFile, FileMode.Create, FileAccess.Write, FileShare.None)))
-                {
-                    var List = Queue.ToList();
-                    List.Insert(0, Song);
-                    List = List.Where(x => x.FullName != null).ToList();
-
-                    Writer.Write(List.Count);
-                    foreach (var Item in List)
+                    catch (TaskCanceledException)
                     {
-                        Writer.Write(Item.FullName);
-                        Writer.Write(Item.Url);
-                        Writer.Write((int)Item.Type);
-                        Writer.Write(Item.Thumbnail ?? string.Empty);
                     }
-                }
 
-                using (var Client = new Socket(SocketType.Stream, ProtocolType.Tcp))
-                {
-                    await Client.ConnectAsync(EndPoint);
-                    await Client.SendAsync(Encoding.ASCII.GetBytes($"GET /admin/metadata?pass={IcecastPass}&mode=updinfo&mount=/{Link}&song={HttpUtility.UrlEncode(Song.FullName)}" + @" HTTP/1.0
-Authorization: Basic " + IcecastAuth + @"
-User-Agent: (Mozilla Compatible)
-
-"));
+                    try
+                    {
+                        await Ffmpeg.StandardInput.WriteAsync("q");
+                    }
+                    catch { }
                 }
-            }
-            catch (Exception Ex)
-            {
-                Console.WriteLine(Ex.ToString());
             }
         }
     }
