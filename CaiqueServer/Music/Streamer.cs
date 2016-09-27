@@ -2,11 +2,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace CaiqueServer.Music
 {
@@ -16,13 +14,13 @@ namespace CaiqueServer.Music
         private const string IcecastPass = "caiquev6";
         private static string IcecastAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"source:{IcecastPass}"));
 
-        private static ConcurrentDictionary<long, Streamer> Streamers = new ConcurrentDictionary<long, Streamer>();
+        private static ConcurrentDictionary<int, Streamer> Streamers = new ConcurrentDictionary<int, Streamer>();
         private static CancellationTokenSource Stop = new CancellationTokenSource();
         private static ConcurrentBag<ManualResetEvent> ShutdownCompleted = new ConcurrentBag<ManualResetEvent>();
 
-        internal static Streamer Get(long Id)
+        internal static Streamer Get(int Id)
         {
-            return Streamers.GetOrAdd(Id, delegate (long StreamId)
+            return Streamers.GetOrAdd(Id, delegate (int StreamId)
             {
                 return new Streamer(StreamId);
             });
@@ -31,6 +29,11 @@ namespace CaiqueServer.Music
         internal static void Shutdown()
         {
             Stop.Cancel();
+            Parallel.ForEach(Streamers, (KVP, s) =>
+            {
+                KVP.Value.Skip();
+            });
+
             var Shutdown = ShutdownCompleted.ToArray();
             if (Shutdown.Length != 0)
             {
@@ -45,9 +48,9 @@ namespace CaiqueServer.Music
         internal TaskCompletionSource<bool> Process;
         private TaskCompletionSource<bool> WaitAdd;
 
-        private long Id;
+        private int Id;
 
-        internal Streamer(long Id)
+        internal Streamer(int Id)
         {
             this.Id = Id;
 
@@ -149,7 +152,14 @@ namespace CaiqueServer.Music
 
                         Ffmpeg.Start();
                         Ffmpeg.PriorityClass = ProcessPriorityClass.BelowNormal;
-                        
+
+                        Chat.Home.ById(Id).Distribute(new Firebase.Json.Event
+                        {
+                            Chat = Id,
+                            Type = "play",
+                            Text = Song.Title
+                        });
+
                         await Process.Task;
                     }
                     catch (TaskCanceledException)
