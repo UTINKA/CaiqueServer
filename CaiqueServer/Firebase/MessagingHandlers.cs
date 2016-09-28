@@ -39,8 +39,15 @@ namespace CaiqueServer.Firebase
                 if (Event.Type == "reg")
                 {
                     Console.WriteLine("-- " + User.Name + " started the app");
-
-                    //Send chat list of registered chats
+                    Messaging.Send(new SendMessage
+                    {
+                        To = In.From,
+                        Data = new Event
+                        {
+                            Type = "welcome",
+                            Text = "Welcome " + User.Name
+                        }
+                    });
                 }
                 else
                 {
