@@ -65,18 +65,13 @@ namespace CaiqueServer.Music
                     YouTubeVideo MaxVid = null;
                     foreach (var Vid in Videos.Where(Video => Video.AudioFormat == AudioFormat.Aac))
                     {
-                        if (Vid.AudioBitrate == 192)
-                        {
-                            return Vid.Uri;
-                        }
-
                         if (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate)
                         {
                             MaxVid = Vid;
                         }
                     }
 
-                    return MaxVid.Uri;
+                    return MaxVid?.Uri ?? string.Empty;
                 }
                 else if (Type == SongType.SoundCloud)
                 {

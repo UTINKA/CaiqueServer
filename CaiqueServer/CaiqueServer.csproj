@@ -121,12 +121,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Chat\Home.cs" />
+    <Compile Include="Firebase\Authentication.cs" />
+    <Compile Include="Firebase\Json\AuthenticationResponse.cs" />
     <Compile Include="Firebase\Json\DatabaseChat.cs" />
     <Compile Include="Firebase\Json\Event.cs" />
     <Compile Include="Chat\Room.cs" />
     <Compile Include="ConsoleEvents.cs" />
     <Compile Include="Extentions.cs" />
-    <Compile Include="Firebase\Json\DatabaseToken.cs" />
     <Compile Include="Firebase\Json\DatabaseUser.cs" />
     <Compile Include="Firebase\Messaging.cs" />
     <Compile Include="Firebase\Json\ServerMessage.cs" />

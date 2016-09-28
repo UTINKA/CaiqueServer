@@ -50,7 +50,7 @@ namespace CaiqueServer
             });
 
             //ToDo: Automate this IN THE APP
-            var KlteToken = "c-AxRCHxqH4:APA91bEl7bgursLXdnuOGRnvPk83_X0E-WrKkA-4cxGYsaysVKXAj-s69mY6UjmuF2D6y3FqPCjX3I0k8FCLRjfrI-n8HhjJuQG3O58WGkf9HiqJJzvIocuvkLUaiXJnmtA7e2DbRL0u";
+            /*var KlteToken = "c-AxRCHxqH4:APA91bEl7bgursLXdnuOGRnvPk83_X0E-WrKkA-4cxGYsaysVKXAj-s69mY6UjmuF2D6y3FqPCjX3I0k8FCLRjfrI-n8HhjJuQG3O58WGkf9HiqJJzvIocuvkLUaiXJnmtA7e2DbRL0u";
 
             Firebase.Database.Client.Set("user/2", new Firebase.Json.DatabaseUser
             {
@@ -62,7 +62,7 @@ namespace CaiqueServer
             Firebase.Database.Client.Set("token/" + KlteToken, new Firebase.Json.DatabaseToken
             {
                 Id = 2
-            });
+            });*/
             
             Firebase.Database.Client.Set("chat/0", new Firebase.Json.DatabaseChat
             {
@@ -71,23 +71,23 @@ namespace CaiqueServer
                 Picture = 5
             });
 
-            Console.WriteLine("Start spam");
+            /*Console.WriteLine("Start spam");
 
             for (int i = 0; i < 20; i++)
             {
-                var ChatId = i % 10;
+                var ChatId = i % 10 + 2;
 
                 Chat.Home.ById(ChatId).Distribute(new Firebase.Json.Event
                 {
                     Chat = ChatId,
-                    Sender = 2,
+                    Sender = "Server",
                     Type = "text",
                     Text = "Hi!",
                     Date = 1474402074,
                     Attachment = i
                 }, "high");
-            }
-            
+            }*/
+
             Console.WriteLine("Boot");
 
             for (int i = 0; i < 10; i++)
@@ -95,7 +95,7 @@ namespace CaiqueServer
                 //Streamer.Get(i).Enqueue("macintosh plus vaporwave");
             }
 
-            Streamer.Get(1).Enqueue("macintosh plus vaporwave");
+            Streamer.Get(1).Enqueue("trash candy");
 
             while (true)
             {

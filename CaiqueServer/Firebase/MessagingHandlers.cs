@@ -2,53 +2,57 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace CaiqueServer.Firebase
 {
     class MessagingHandlers
     {
-        public static void Upstream(UpstreamMessage In)
+        public static async Task Upstream(UpstreamMessage In)
         {
-            var Sender = Database.Client.Get($"token/{In.From}").ResultAs<DatabaseToken>();
-            if (Sender == null)
+            var Event = In.Data.ToObject<Event>();
+            var Key = Database.Client.Get($"token/{In.From}/key").ResultAs<string>();
+            if (Key == null)
             {
-                Console.WriteLine("-- Token " + In.From + " not in DB - " + In.Data ?? string.Empty);
+                Console.WriteLine("Not registered - " + In.Data.ToString());
+                if (Event.Type == "reg" && Event.Text != null)
+                {
+                    var Userdata = await Authentication.GetUnique(Event.Text);
+                    Key = Userdata.Sub;
+
+                    Console.WriteLine("Register with " + Userdata.Email);
+
+                    await Database.Client.SetAsync($"token/{In.From}", new { key = Key });
+                    if ((await Database.Client.GetAsync($"user/{Key}")).ResultAs<DatabaseUser>() == null)
+                    {
+                        await Database.Client.SetAsync($"user/{Key}", new DatabaseUser
+                        {
+                            Name = Userdata.Name
+                        });
+                    }
+                }
             }
             else
             {
-                try
+                Event.Sender = Key;
+                var User = Database.Client.Get($"user/{Key}").ResultAs<DatabaseUser>();
+                if (Event.Type == "reg")
                 {
-                    var Event = In.Data.ToObject<Event>();
-                    Event.Sender = Sender.Id;
+                    Console.WriteLine("-- " + User.Name + " started the app");
 
-                    var User = Database.Client.Get($"user/{Sender.Id}").ResultAs<DatabaseUser>();
+                    //Send chat list of registered chats
+                }
+                else
+                {
                     Console.WriteLine("-- Upstream from " + User.Name + " " + JsonConvert.SerializeObject(In.Data));
 
                     if (Event.Type == "text")
                     {
                         Chat.Home.ById(Event.Chat).Distribute(Event, "high");
                     }
-                    else if (Event.Type == "reg")
+                    else if (Event.Type == "madd")
                     {
-                        var ResponseData = new JObject();
-                        ResponseData["received"] = "Registration";
-
-                        Messaging.Send(new SendMessage
-                        {
-                            To = In.From,
-                            Data = ResponseData
-                        });
-                    }
-                    else if (Event.Type == "profile")
-                    {
-                        var ResponseData = new JObject();
-                        ResponseData["received"] = "Profile Update";
-
-                        Messaging.Send(new SendMessage
-                        {
-                            To = In.From,
-                            Data = ResponseData
-                        });
+                        Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
                     }
                     else if (Event.Type == "msearch")
                     {
@@ -62,6 +66,17 @@ namespace CaiqueServer.Firebase
                     {
                         Music.Streamer.Get(Event.Chat).Skip();
                     }
+                    else if (Event.Type == "profile")
+                    {
+                        var ResponseData = new JObject();
+                        ResponseData["received"] = "Profile Update";
+
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = ResponseData
+                        });
+                    }
                     else
                     {
                         if (Event.Type == "update")
@@ -69,27 +84,9 @@ namespace CaiqueServer.Firebase
                             var Update = JsonConvert.DeserializeObject<DatabaseChat>(Event.Text);
                             //ToDo: Update DB
                         }
-                        else if (Event.Type == "madd")
-                        {
-                            Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
-                        }
 
                         Chat.Home.ById(Event.Chat).Distribute(Event);
-                        //Personal?
                     }
-                }
-                catch (Exception Ex)
-                {
-                    Console.WriteLine("Invalid Message " + Ex.ToString());
-
-                    var ResponseData = new JObject();
-                    ResponseData["received"] = true;
-
-                    Messaging.Send(new SendMessage
-                    {
-                        To = In.From,
-                        Data = ResponseData
-                    });
                 }
             }
         }

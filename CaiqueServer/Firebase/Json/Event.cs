@@ -12,7 +12,7 @@ namespace CaiqueServer.Firebase.Json
         public int Chat;
 
         [JsonProperty("sender", Required = Required.Default)]
-        public long Sender;
+        public string Sender;
 
         [JsonProperty("date", Required = Required.Default)]
         public int Date;

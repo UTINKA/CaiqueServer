@@ -77,7 +77,7 @@ namespace CaiqueServer.Firebase
                         MessageType = "ack"
                     });
 
-                    MessagingHandlers.Upstream(Message);
+                    await MessagingHandlers.Upstream(Message);
                 }
                 else if (JData["message_type"].ToString().EndsWith("ack"))
                 {

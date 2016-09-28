@@ -2,6 +2,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace CaiqueServer
@@ -11,6 +13,26 @@ namespace CaiqueServer
         public static string SafePath(this string In)
         {
             return In.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        public static string Md5(this string In)
+        {
+            var InBytes = Encoding.Unicode.GetBytes(In);
+
+            var Result = new StringBuilder();
+            byte[] Hash;
+
+            using (var Md5 = MD5.Create())
+            {
+                Hash = Md5.ComputeHash(InBytes);
+            }
+            
+            for (int i = 0; i < Hash.Length; i++)
+            {
+                Result.Append(Hash[i].ToString("x2"));
+            }
+            
+            return Result.ToString();
         }
 
         public static Task ConnectAsync(this Socket Connection, IPEndPoint EndPoint)
