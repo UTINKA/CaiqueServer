@@ -121,8 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Chat\Home.cs" />
-    <Compile Include="Firebase\Authentication.cs" />
-    <Compile Include="Firebase\Json\AuthenticationResponse.cs" />
+    <Compile Include="Firebase\Json\Authentication.cs" />
     <Compile Include="Firebase\Json\DatabaseChat.cs" />
     <Compile Include="Firebase\Json\Event.cs" />
     <Compile Include="Chat\Room.cs" />
