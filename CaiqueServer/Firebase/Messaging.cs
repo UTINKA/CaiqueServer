@@ -93,8 +93,7 @@ namespace CaiqueServer.Firebase
                             {
                                 if (Out.Priority == "high")
                                 {
-                                    var Response = await Database.Client.PushAsync($"message", Out.Data).ConfigureAwait(false);
-                                    await Database.Client.SetAsync($"chat/{Out.To.Split('-')[1]}/{Response.Result.Name}", true).ConfigureAwait(false);
+                                    await Database.Client.PushAsync($"message/{Out.To.Split('%')[1]}", Out.Data);
                                     Interlocked.Increment(ref Saves);
                                 }
                             }
@@ -156,7 +155,7 @@ namespace CaiqueServer.Firebase
             var Gcm = new Element
             {
                 TagName = "gcm",
-                Value = JsonConvert.SerializeObject(JsonObject)
+                Value = JsonObject.ToJson()
             };
 
             Gcm.Attributes["xmlns"] = "google:mobile:data";

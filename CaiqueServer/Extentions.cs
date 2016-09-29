@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -26,13 +27,22 @@ namespace CaiqueServer
             {
                 Hash = Md5.ComputeHash(InBytes);
             }
-            
+
             for (int i = 0; i < Hash.Length; i++)
             {
                 Result.Append(Hash[i].ToString("x2"));
             }
-            
+
             return Result.ToString();
+        }
+
+        public static string ToJson(this object In)
+        {
+            return JsonConvert.SerializeObject(In, Formatting.None, new JsonSerializerSettings
+            {
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            });
         }
 
         public static Task ConnectAsync(this Socket Connection, IPEndPoint EndPoint)

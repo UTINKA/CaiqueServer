@@ -9,7 +9,7 @@ namespace CaiqueServer.Firebase.Json
         public string Type;
 
         [JsonProperty("chat", Required = Required.Default)]
-        public int Chat;
+        public string Chat;
 
         [JsonProperty("sender", Required = Required.Default)]
         public string Sender;
@@ -21,6 +21,6 @@ namespace CaiqueServer.Firebase.Json
         public string Text;
 
         [JsonProperty("attach", Required = Required.Default)]
-        public long Attachment;
+        public string Attachment;
     }
 }

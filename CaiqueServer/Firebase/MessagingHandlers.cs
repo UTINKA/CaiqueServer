@@ -1,99 +1,117 @@
 ﻿using CaiqueServer.Firebase.Json;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CaiqueServer.Firebase
 {
     class MessagingHandlers
     {
+        private static async Task SendChatList(string Id, string Token)
+        {
+            var Chats = await Database.Client.GetAsync($"member/{Id}");
+            var List = Chats.ResultAs<Dictionary<string, bool>>();
+
+            if (List != null)
+            {
+                Messaging.Send(new SendMessage
+                {
+                    To = Token,
+                    Data = new { type = "list", chats = List.Keys }
+                });
+            }
+        }
+
         public static async Task Upstream(UpstreamMessage In)
         {
             var Event = In.Data.ToObject<Event>();
-            var Key = Database.Client.Get($"token/{In.From}/key").ResultAs<string>();
-            if (Key == null)
+            Event.Sender = Database.Client.Get($"token/{In.From}/key").ResultAs<string>();
+
+            if (Event.Sender == null)
             {
                 Console.WriteLine("Not registered - " + In.Data.ToString());
                 if (Event.Type == "reg" && Event.Text != null)
                 {
-                    var Userdata = await Authentication.GetUnique(Event.Text);
-                    Key = Userdata.Sub;
-
+                    var Userdata = await Authentication.UserdataFromToken(Event.Text);
                     Console.WriteLine("Register with " + Userdata.Email);
 
-                    await Database.Client.SetAsync($"token/{In.From}", new { key = Key });
-                    if ((await Database.Client.GetAsync($"user/{Key}")).ResultAs<DatabaseUser>() == null)
+                    await Database.Client.SetAsync($"token/{In.From}", new { key = Userdata.Sub });
+                    if ((await Database.Client.GetAsync($"user/{Userdata.Sub}")).ResultAs<DatabaseUser>() == null)
                     {
-                        await Database.Client.SetAsync($"user/{Key}", new DatabaseUser
+                        await Database.Client.SetAsync($"user/{Userdata.Sub}", new DatabaseUser
                         {
-                            Name = Userdata.Name
+                            Name = Userdata.Name,
+                            Picture = Userdata.Picture
+                        });
+
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = new Event
+                            {
+                                Type = "regdone",
+                                Text = "Registered as " + Userdata.Name
+                            }
                         });
                     }
+
+                    await SendChatList(Userdata.Sub, In.From);
                 }
             }
             else
             {
-                Event.Sender = Key;
-                var User = Database.Client.Get($"user/{Key}").ResultAs<DatabaseUser>();
-                if (Event.Type == "reg")
-                {
-                    Console.WriteLine("-- " + User.Name + " started the app");
-                    Messaging.Send(new SendMessage
-                    {
-                        To = In.From,
-                        Data = new Event
-                        {
-                            Type = "welcome",
-                            Text = "Welcome " + User.Name
-                        }
-                    });
-                }
-                else
-                {
-                    Console.WriteLine("-- Upstream from " + User.Name + " " + JsonConvert.SerializeObject(In.Data));
+                var User = Database.Client.Get($"user/{Event.Sender}").ResultAs<DatabaseUser>();
+                Console.WriteLine("-- Upstream from " + User.Name + " " + Event.Type + " " + Event.Text);
 
-                    if (Event.Type == "text")
-                    {
+                switch (Event.Type)
+                {
+                    case "text":
                         Chat.Home.ById(Event.Chat).Distribute(Event, "high");
-                    }
-                    else if (Event.Type == "madd")
-                    {
+                        break;
+
+                    case "madd":
                         Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
-                    }
-                    else if (Event.Type == "msearch")
-                    {
+                        break;
+
+                    case "msearch":
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { r = Music.Songdata.Search(Event.Text) }
+                            Data = new { type = "mres", r = Music.Songdata.Search(Event.Text) }
                         });
-                    }
-                    else if (Event.Type == "mskip")
-                    {
+                        break;
+
+                    case "mskip":
                         Music.Streamer.Get(Event.Chat).Skip();
-                    }
-                    else if (Event.Type == "profile")
-                    {
-                        var ResponseData = new JObject();
-                        ResponseData["received"] = "Profile Update";
+                        break;
 
+                    case "reg":
+                        await SendChatList(Event.Sender, In.From);
+                        break;
+
+                    case "profile":
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = ResponseData
+                            Data = User
                         });
-                    }
-                    else
-                    {
-                        if (Event.Type == "update")
-                        {
-                            var Update = JsonConvert.DeserializeObject<DatabaseChat>(Event.Text);
-                            //ToDo: Update DB
-                        }
+                        break;
 
-                        Chat.Home.ById(Event.Chat).Distribute(Event);
-                    }
+                    case "newchat":
+                        var Id = await Database.Client.PushAsync("chat", new DatabaseChat
+                        {
+                            Title = Event.Text,
+                            Picture = "893b5376-6e5a-4699-bb71-f360c6ebe8d7",
+                            Tags = new[] { "test" }
+                        });
+
+                        await Database.Client.SetAsync($"member/{Event.Sender}/{Id.Result.Name}", true);
+                        break;
+
+                    case "update":
+                        //ToDo: Update DB
+                        //Chat.Home.ById(Event.Chat).Distribute(Event);
+                        break;
                 }
             }
         }

@@ -7,5 +7,8 @@ namespace CaiqueServer.Firebase.Json
     {
         [JsonProperty("name", Required = Required.Always)]
         public string Name;
+
+        [JsonProperty("picture", Required = Required.Default)]
+        public string Picture;
     }
 }

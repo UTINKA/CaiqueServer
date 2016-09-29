@@ -7,11 +7,11 @@ namespace CaiqueServer.Chat
 {
     class Room
     {
-        private int Topic;
+        private string Topic;
         private int Roulette = 0;
         private int MaxRoulette = 32;
 
-        internal Room(int Id)
+        internal Room(string Id)
         {
             Topic = Id;
         }
@@ -26,7 +26,7 @@ namespace CaiqueServer.Chat
             var SubTopic = Interlocked.Increment(ref Roulette) % MaxRoulette;
             Messaging.Send(new SendMessage
             {
-                To = $"/topics/chat-{Topic}-{SubTopic}",
+                To = $"/topics/%{Topic}%{SubTopic}",
                 Data = Event,
                 Priority = Priority
             });

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,17 +11,16 @@ namespace CaiqueServer.Music
     {
         private static IPEndPoint EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8000);
         private const string IcecastPass = "caiquev6";
-        private static string IcecastAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"source:{IcecastPass}"));
 
-        private static ConcurrentDictionary<int, Streamer> Streamers = new ConcurrentDictionary<int, Streamer>();
+        private static ConcurrentDictionary<string, Streamer> Streamers = new ConcurrentDictionary<string, Streamer>();
         private static CancellationTokenSource Stop = new CancellationTokenSource();
         private static ConcurrentBag<ManualResetEvent> ShutdownCompleted = new ConcurrentBag<ManualResetEvent>();
 
-        internal static Streamer Get(int Id)
+        internal static Streamer Get(string Chat)
         {
-            return Streamers.GetOrAdd(Id, delegate (int StreamId)
+            return Streamers.GetOrAdd(Chat, delegate (string Id)
             {
-                return new Streamer(StreamId);
+                return new Streamer(Id);
             });
         }
 
@@ -48,11 +46,11 @@ namespace CaiqueServer.Music
         internal TaskCompletionSource<bool> Process;
         private TaskCompletionSource<bool> WaitAdd;
 
-        private int Id;
+        private string Id;
 
-        internal Streamer(int Id)
+        internal Streamer(string Chat)
         {
-            this.Id = Id;
+            Id = Chat;
 
             var Reset = new ManualResetEvent(false);
             ShutdownCompleted.Add(Reset);

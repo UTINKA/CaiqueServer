@@ -9,7 +9,7 @@ namespace CaiqueServer.Firebase.Json
         public string Title;
 
         [JsonProperty("picture", Required = Required.Always)]
-        public int Picture;
+        public string Picture;
 
         [JsonProperty("tags", Required = Required.Always)]
         public string[] Tags;

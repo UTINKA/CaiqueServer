@@ -4,11 +4,11 @@ namespace CaiqueServer.Chat
 {
     class Home
     {
-        private static ConcurrentDictionary<int, Room> Rooms = new ConcurrentDictionary<int, Room>();
+        private static ConcurrentDictionary<string, Room> Rooms = new ConcurrentDictionary<string, Room>();
 
-        internal static Room ById(int Chat)
+        internal static Room ById(string Chat)
         {
-            return Rooms.GetOrAdd(Chat, delegate (int Id)
+            return Rooms.GetOrAdd(Chat, delegate (string Id)
             {
                 return new Room(Id);
             });

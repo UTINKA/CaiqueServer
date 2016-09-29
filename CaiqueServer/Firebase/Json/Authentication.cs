@@ -6,7 +6,7 @@ namespace CaiqueServer.Firebase.Json
     [JsonObject(MemberSerialization.OptIn)]
     class Authentication
     {
-        internal static async Task<Authentication> GetUnique(string IdToken)
+        internal static async Task<Authentication> UserdataFromToken(string IdToken)
         {
             var Res = await $"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={IdToken}".WebResponse();
             return JsonConvert.DeserializeObject<Authentication>(Res);
