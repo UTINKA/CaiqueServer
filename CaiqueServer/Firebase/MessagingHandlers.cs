@@ -1,5 +1,6 @@
 ﻿using CaiqueServer.Firebase.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -7,6 +8,8 @@ namespace CaiqueServer.Firebase
 {
     class MessagingHandlers
     {
+        private static ConcurrentDictionary<string, string> TokenCache = new ConcurrentDictionary<string, string>();
+
         private static async Task SendChatList(string Id, string Token)
         {
             var Chats = await Database.Client.GetAsync($"member/{Id}");
@@ -25,7 +28,14 @@ namespace CaiqueServer.Firebase
         public static async Task Upstream(UpstreamMessage In)
         {
             var Event = In.Data.ToObject<Event>();
-            Event.Sender = Database.Client.Get($"token/{In.From}/key").ResultAs<string>();
+            if (!TokenCache.TryGetValue(In.From, out Event.Sender))
+            {
+                Event.Sender = Database.Client.Get($"token/{In.From}/key").ResultAs<string>();
+                if (Event.Sender != null)
+                {
+                    TokenCache.TryAdd(In.From, Event.Sender);
+                }
+            }
 
             if (Event.Sender == null)
             {
@@ -44,13 +54,15 @@ namespace CaiqueServer.Firebase
                             Picture = Userdata.Picture
                         });
 
+                        await Database.Client.SetAsync($"member/{Userdata.Sub}/-KSqbu0zMurmthzBE7GF", true);
+
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
                             Data = new Event
                             {
                                 Type = "regdone",
-                                Text = "Registered as " + Userdata.Name
+                                Text = "Registered as " + Userdata.Name + " and auto-joined the starting chat"
                             }
                         });
                     }
@@ -60,9 +72,6 @@ namespace CaiqueServer.Firebase
             }
             else
             {
-                var User = Database.Client.Get($"user/{Event.Sender}").ResultAs<DatabaseUser>();
-                Console.WriteLine("-- Upstream from " + User.Name + " " + Event.Type + " " + Event.Text);
-
                 switch (Event.Type)
                 {
                     case "text":
@@ -90,11 +99,11 @@ namespace CaiqueServer.Firebase
                         break;
 
                     case "profile":
-                        Messaging.Send(new SendMessage
+                        /*Messaging.Send(new SendMessage
                         {
                             To = In.From,
                             Data = User
-                        });
+                        });*/
                         break;
 
                     case "newchat":
@@ -113,6 +122,9 @@ namespace CaiqueServer.Firebase
                         //Chat.Home.ById(Event.Chat).Distribute(Event);
                         break;
                 }
+
+                var User = Database.Client.Get($"user/{Event.Sender}").ResultAs<DatabaseUser>();
+                Console.WriteLine("-- Upstream from " + User.Name + " " + Event.Type + " " + Event.Text);
             }
         }
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,9 +8,7 @@ namespace CaiqueServer.Music
 {
     class Streamer
     {
-        private static IPEndPoint EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8000);
         private const string IcecastPass = "caiquev6";
-
         private static ConcurrentDictionary<string, Streamer> Streamers = new ConcurrentDictionary<string, Streamer>();
         private static CancellationTokenSource Stop = new CancellationTokenSource();
         private static ConcurrentBag<ManualResetEvent> ShutdownCompleted = new ConcurrentBag<ManualResetEvent>();
@@ -126,9 +123,9 @@ namespace CaiqueServer.Music
                 }
                 else
                 {
-                    ProcessStartInfo.Arguments += $"-c:a aac -b:a 128k -ac 2 -ar 48k ";
+                    ProcessStartInfo.Arguments += $"-c:a aac -b:a 96k -ac 2 -ar 48k ";
                 }
-                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 icecast://source:{IcecastPass}@localhost:8000/{Id}";
+                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 icecast://source:{IcecastPass}@localhost:80/{Id}";
                 
                 using (var Ffmpeg = new Process())
                 {

@@ -100,12 +100,16 @@ namespace CaiqueServer.Firebase
                         }
                         else
                         {
-                            Console.WriteLine("Message " + MessageId + " status " + SentAck.MessageType + " - trying again in 1.5s");
+                            Console.WriteLine("Message " + MessageId + " status " + SentAck.Error + " " + SentAck.ErrorDesc + " - trying again in 1.5s");
 
                             if (WaitAck.TryGetValue(MessageId, out Out))
                             {
                                 await Task.Delay(1500);
                                 Resend(Out);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Message " + MessageId + " couldn't be resent");
                             }
                         }
                     }
@@ -146,7 +150,7 @@ namespace CaiqueServer.Firebase
 
         internal static void Resend(SendMessage ToSend)
         {
-            WaitAck.TryAdd(long.Parse(ToSend.MessageId), ToSend);
+            //WaitAck.TryAdd(long.Parse(ToSend.MessageId), ToSend);
             Send((object)ToSend);
         }
 

@@ -63,14 +63,20 @@ namespace CaiqueServer.Music
                     var Videos = YouTube.Default.GetAllVideos(Url);
                     
                     YouTubeVideo MaxVid = null;
-                    foreach (var Vid in Videos.Where(Video => Video.AudioFormat == AudioFormat.Aac))
+                    foreach (var Vid in Videos)
                     {
-                        if (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate)
+                        if (Vid.AudioFormat == AudioFormat.Aac && (Vid.AdaptiveKind != AdaptiveKind.Audio || Vid.IsEncrypted))
                         {
-                            MaxVid = Vid;
+                            //Console.WriteLine(Vid.AdaptiveKind + " " + Vid.AudioBitrate + " " + Vid.FileExtension + " " + Vid.Format + " " + Vid.IsEncrypted + " " + Vid.Resolution);
+
+                            if (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate)
+                            {
+                                MaxVid = Vid;
+                            }
                         }
                     }
 
+                    Console.WriteLine(MaxVid.AdaptiveKind + " " + MaxVid.AudioBitrate + " " + MaxVid.FileExtension + " " + MaxVid.Format + " " + MaxVid.IsEncrypted + " " + MaxVid.Resolution + " " + FullName ?? string.Empty);
                     return MaxVid?.Uri ?? string.Empty;
                 }
                 else if (Type == SongType.SoundCloud)
