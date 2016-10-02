@@ -8,10 +8,19 @@ namespace CaiqueServer.Music
 {
     class Streamer
     {
+        private struct AddedSong
+        {
+            internal string Adder;
+            internal Songdata Data;
+        }
+
         private const string IcecastPass = "caiquev6";
         private static ConcurrentDictionary<string, Streamer> Streamers = new ConcurrentDictionary<string, Streamer>();
         private static CancellationTokenSource Stop = new CancellationTokenSource();
         private static ConcurrentBag<ManualResetEvent> ShutdownCompleted = new ConcurrentBag<ManualResetEvent>();
+
+        private static int AtomicPort = (ushort.MaxValue + 1) / 8;
+        private static ConcurrentQueue<ushort> ReusePorts = new ConcurrentQueue<ushort>();
 
         internal static Streamer Get(string Chat)
         {
@@ -36,14 +45,22 @@ namespace CaiqueServer.Music
             }
         }
 
-        internal Songdata Song;
-        private ConcurrentQueue<Songdata> Queue = new ConcurrentQueue<Songdata>();
+        private AddedSong _Song;
+        internal Songdata Song
+        {
+            get
+            {
+                return _Song.Data;
+            }
+        }
+        private ConcurrentQueue<AddedSong> Queue = new ConcurrentQueue<AddedSong>();
         private const int MaxQueued = 16;
         
         internal TaskCompletionSource<bool> Process;
         private TaskCompletionSource<bool> WaitAdd;
 
         private string Id;
+        private ushort Port;
 
         internal Streamer(string Chat)
         {
@@ -57,7 +74,7 @@ namespace CaiqueServer.Music
             });
         }
 
-        internal bool Enqueue(string Song)
+        internal bool Enqueue(string Song, string Adder)
         {
             var Results = Songdata.Search(Song, 1);
             if (Results.Count == 0)
@@ -65,17 +82,17 @@ namespace CaiqueServer.Music
                 return false;
             }
 
-            return Enqueue(Results[0]);
+            return Enqueue(Results[0], Adder);
         }
 
-        internal bool Enqueue(Songdata Song)
+        internal bool Enqueue(Songdata Song, string Adder)
         {
             if (Queue.Count >= MaxQueued)
             {
                 return false;
             }
 
-            Queue.Enqueue(Song);
+            Queue.Enqueue(new AddedSong { Data = Song, Adder = Adder });
             WaitAdd?.TrySetResult(true);
             return true;
         }
@@ -91,10 +108,26 @@ namespace CaiqueServer.Music
 
             while (true)
             {
+                WaitAdd = new TaskCompletionSource<bool>();
+
+                if (!ReusePorts.TryDequeue(out Port))
+                {
+                    Port = (ushort)Interlocked.Increment(ref AtomicPort);
+                }
+
                 try
                 {
-                    WaitAdd = new TaskCompletionSource<bool>();
                     await StreamUntilQueueEmpty();
+                }
+                catch (Exception Ex)
+                {
+                    Console.WriteLine(Id + " " + Ex.ToString());
+                }
+
+                ReusePorts.Enqueue(Port);
+
+                try
+                {
                     await WaitAdd.Task;
                 }
                 catch (Exception Ex)
@@ -114,9 +147,10 @@ namespace CaiqueServer.Music
                 RedirectStandardOutput = true
             };
 
-            while (!Stop.IsCancellationRequested && Queue.TryDequeue(out Song))
+            while (!Stop.IsCancellationRequested && Queue.TryDequeue(out _Song))
             {
-                ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -content_type audio/aac -f adts ";
+                //ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -content_type audio/aac -f adts ";
+                ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -f adts ";
                 if (Song.Type == SongType.YouTube)
                 {
                     ProcessStartInfo.Arguments += "-c:a copy ";
@@ -125,8 +159,11 @@ namespace CaiqueServer.Music
                 {
                     ProcessStartInfo.Arguments += $"-c:a aac -b:a 96k -ac 2 -ar 48k ";
                 }
-                ProcessStartInfo.Arguments += $"-v quiet -ice_public 1 icecast://source:{IcecastPass}@localhost:80/{Id}";
-                
+
+                //ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id}";
+                //ProcessStartInfo.Arguments += $"-f rtsp rtsp://127.0.0.1:1935/live/myStream.sdp";
+                ProcessStartInfo.Arguments += $"udp://127.0.0.1:{Port}";
+
                 using (var Ffmpeg = new Process())
                 {
                     Process = new TaskCompletionSource<bool>();
@@ -152,7 +189,9 @@ namespace CaiqueServer.Music
                         {
                             Chat = Id,
                             Type = "play",
-                            Text = Song.Title
+                            Text = Song.Title,
+                            Sender = _Song.Adder,
+                            Attachment = Port.ToString()
                         });
 
                         await Process.Task;

@@ -11,7 +11,7 @@ namespace CaiqueServer
         {
             Console.Title = "Caique Server";
 
-            var ProcessStartInfo = new ProcessStartInfo
+            /*var ProcessStartInfo = new ProcessStartInfo
             {
                 FileName = "Includes/icecast.exe",
                 Arguments = "-c Includes/icecast.xml",
@@ -20,7 +20,7 @@ namespace CaiqueServer
             };
 
             var IcecastProcess = Process.Start(ProcessStartInfo);
-            IcecastProcess.PriorityClass = ProcessPriorityClass.AboveNormal;
+            IcecastProcess.PriorityClass = ProcessPriorityClass.AboveNormal;*/
 
             Console.WriteLine("Icecast server started");
             
@@ -36,7 +36,7 @@ namespace CaiqueServer
                 var StopFCM = Firebase.Messaging.Stop();
                 Firebase.Database.Stop();
                 Streamer.Shutdown();
-                IcecastProcess.Dispose();
+                //IcecastProcess.Dispose();
                 StopFCM.Wait();
             });
 
@@ -69,6 +69,10 @@ namespace CaiqueServer
 
             //None 192 .mp4 Mp4 False 720 -> NO DROP
             //Streamer.Get("-KSqbu0zMurmthzBE7GF").Enqueue("https://www.youtube.com/watch?v=XMXgHfHxKVM");
+
+            //Streamer.Get("-KSqbu0zMurmthzBE7GF").Enqueue("initial d mega mix");
+
+            Streamer.Get("-KSqbu0zMurmthzBE7GF").Enqueue("https://www.youtube.com/watch?v=SuA1FCCprJA", "102252584382915220650");
 
 
             Console.WriteLine("Boot");

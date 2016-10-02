@@ -79,7 +79,7 @@ namespace CaiqueServer.Firebase
                         break;
 
                     case "madd":
-                        Music.Streamer.Get(Event.Chat).Enqueue(Event.Text);
+                        Music.Streamer.Get(Event.Chat).Enqueue(Event.Text, Event.Sender);
                         break;
 
                     case "msearch":
