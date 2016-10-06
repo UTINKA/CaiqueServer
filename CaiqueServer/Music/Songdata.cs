@@ -11,29 +11,32 @@ using VideoLibrary;
 
 namespace CaiqueServer.Music
 {
-    enum SongType
-    {
-        Local,
-        Remote,
-        YouTube,
-        SoundCloud,
-        Uploaded
-    }
-
     [JsonObject(MemberSerialization.OptIn)]
-    struct Songdata
+    struct SongData
     {
-        internal static YouTubeService YT;
-        internal static string SoundCloud = "5c28ed4e5aef8098723bcd665d09041d";
-        internal static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
-
-        static Songdata()
+        private static YouTubeService YT = new YouTubeService(new BaseClientService.Initializer
         {
-            YT = new YouTubeService(new BaseClientService.Initializer
-            {
-                ApiKey = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ"
-            });
-        }
+            ApiKey = "AIzaSyAVrXiAHfLEbQbNJP80zbTuW2jL0wuEigQ"
+        });
+
+        private static string SoundCloud = "5c28ed4e5aef8098723bcd665d09041d";
+        private static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
+        private static readonly Regex YoutubeVideoRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
+        
+        [JsonProperty("name", Required = Required.Always)]
+        internal string FullName;
+
+        [JsonProperty("url", Required = Required.Always)]
+        internal string Url;
+
+        [JsonProperty("adder", Required = Required.Always)]
+        internal string Adder;
+
+        [JsonProperty("type", Required = Required.Always)]
+        internal SongType Type;
+
+        [JsonProperty("tn", Required = Required.Default)]
+        internal string Thumbnail;
 
         internal string Title
         {
@@ -48,12 +51,6 @@ namespace CaiqueServer.Music
             }
         }
 
-        [JsonProperty("name", Required = Required.Always)]
-        internal string FullName;
-
-        [JsonProperty("url", Required = Required.Always)]
-        internal string Url;
-
         internal string StreamUrl
         {
             get
@@ -65,18 +62,13 @@ namespace CaiqueServer.Music
                     YouTubeVideo MaxVid = null;
                     foreach (var Vid in Videos)
                     {
-                        if (Vid.AudioFormat == AudioFormat.Aac && (Vid.AdaptiveKind != AdaptiveKind.Audio || Vid.IsEncrypted))
+                        if (Vid.AudioFormat == AudioFormat.Aac && (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate))
                         {
-                            //Console.WriteLine(Vid.AdaptiveKind + " " + Vid.AudioBitrate + " " + Vid.FileExtension + " " + Vid.Format + " " + Vid.IsEncrypted + " " + Vid.Resolution);
-
-                            if (MaxVid == null || Vid.AudioBitrate >= MaxVid.AudioBitrate)
-                            {
-                                MaxVid = Vid;
-                            }
+                            MaxVid = Vid;
                         }
                     }
 
-                    Console.WriteLine(MaxVid.FormatCode + " " + MaxVid.AdaptiveKind + " " + MaxVid.AudioBitrate + " " + MaxVid.FileExtension + " " + MaxVid.Format + " " + MaxVid.IsEncrypted + " " + MaxVid.Resolution + " " + FullName ?? string.Empty);
+                    //Console.WriteLine(MaxVid.FormatCode + " " + MaxVid.AdaptiveKind + " " + MaxVid.AudioBitrate + " " + MaxVid.FileExtension + " " + MaxVid.Format + " " + MaxVid.IsEncrypted + " " + MaxVid.Resolution + " " + FullName ?? string.Empty);
                     return MaxVid?.Uri ?? string.Empty;
                 }
                 else if (Type == SongType.SoundCloud)
@@ -87,28 +79,18 @@ namespace CaiqueServer.Music
                         return $"{JObject.Parse(SC)["stream_url"]}?client_id={SoundCloud}";
                     }
                 }
-                else if (Type == SongType.Uploaded)
-                {
-                }
 
                 return Url;
             }
         }
 
-        [JsonProperty("type", Required = Required.Always)]
-        internal SongType Type;
-
-        [JsonProperty("tn", Required = Required.Default)]
-        internal string Thumbnail;
-
-        internal static readonly Regex YoutubeVideoRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
-
-        internal Songdata(string Url)
+        internal SongData(string Url)
         {
             FullName = string.Empty;
             this.Url = Url;
             Type = SongType.YouTube;
             Thumbnail = null;
+            Adder = null;
 
             var Match = YoutubeVideoRegex.Match(Url);
             if (Match.Success)
@@ -123,19 +105,23 @@ namespace CaiqueServer.Music
                     Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url;
                 }
             }
+            else
+            {
+                Console.WriteLine("Invalid YouTube URL " + Url);
+            }
         }
 
-        internal static List<Songdata> Search(object ToSearch, int SoftLimit = 10)
+        internal static List<SongData> Search(object ToSearch, int SoftLimit = 10)
         {
             var Query = ((string)ToSearch).Trim();
-            var Results = new List<Songdata>();
+            var Results = new List<SongData>();
 
             if (Query.Length >= 3)
             {
                 Results.AddRange(new DirectoryInfo(MusicDir).GetFiles()
                     .Where(x => x.Name.Length >= Query.Length && x.Name.ToLower().Contains(Query.ToLower()) && !x.Attributes.HasFlag(FileAttributes.System))
                     .OrderBy(x => x.Name)
-                    .Select(x => new Songdata
+                    .Select(x => new SongData
                     {
                         FullName = x.Name,
                         Url = x.FullName,
@@ -147,7 +133,7 @@ namespace CaiqueServer.Music
             {
                 if (Regex.IsMatch(Query, @"http(s)?://(www\.)?(youtu\.be|youtube\.com)[\w-/=&?]+"))
                 {
-                    Results.Add(new Songdata(Query));
+                    Results.Add(new SongData(Query));
                 }
                 else if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
                 {
@@ -157,7 +143,7 @@ namespace CaiqueServer.Music
                         if (SC != string.Empty && SC.StartsWith("{\"kind\":\"track\""))
                         {
                             var Response = JObject.Parse(SC);
-                            Results.Add(new Songdata
+                            Results.Add(new SongData
                             {
                                 FullName = Response["title"].ToString(),
                                 Url = Query,
@@ -172,7 +158,7 @@ namespace CaiqueServer.Music
                 }
                 else
                 {
-                    Results.Add(new Songdata
+                    Results.Add(new SongData
                     {
                         FullName = Query,
                         Url = Query,
@@ -189,7 +175,7 @@ namespace CaiqueServer.Music
                 ListRequest.Type = "video";
                 foreach (var Result in ListRequest.Execute().Items)
                 {
-                    Results.Add(new Songdata
+                    Results.Add(new SongData
                     {
                         FullName = Result.Snippet.Title,
                         Url = $"http://www.youtube.com/watch?v={Result.Id.VideoId}",

@@ -12,7 +12,7 @@ namespace CaiqueServer.Firebase
 
         private static async Task SendChatList(string Id, string Token)
         {
-            var Chats = await Database.Client.GetAsync($"member/{Id}");
+            var Chats = await Database.Client.GetAsync($"user/{Id}/member");
             var List = Chats.ResultAs<Dictionary<string, bool>>();
 
             if (List != null)
@@ -46,15 +46,18 @@ namespace CaiqueServer.Firebase
                     Console.WriteLine("Register with " + Userdata.Email);
 
                     await Database.Client.SetAsync($"token/{In.From}", new { key = Userdata.Sub });
-                    if ((await Database.Client.GetAsync($"user/{Userdata.Sub}")).ResultAs<DatabaseUser>() == null)
+                    await SendChatList(Userdata.Sub, In.From);
+
+                    if ((await Database.Client.GetAsync($"user/{Userdata.Sub}/data")).ResultAs<DatabaseUser>() == null)
                     {
-                        await Database.Client.SetAsync($"user/{Userdata.Sub}", new DatabaseUser
+                        await Database.Client.SetAsync($"user/{Userdata.Sub}/data", new DatabaseUser
                         {
                             Name = Userdata.Name,
                             Picture = Userdata.Picture
                         });
 
-                        await Database.Client.SetAsync($"member/{Userdata.Sub}/-KSqbu0zMurmthzBE7GF", true);
+                        // ToDo: Remove
+                        await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
 
                         Messaging.Send(new SendMessage
                         {
@@ -66,8 +69,6 @@ namespace CaiqueServer.Firebase
                             }
                         });
                     }
-
-                    await SendChatList(Userdata.Sub, In.From);
                 }
             }
             else
@@ -86,7 +87,7 @@ namespace CaiqueServer.Firebase
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { type = "mres", r = Music.Songdata.Search(Event.Text) }
+                            Data = new { type = "mres", r = Music.SongData.Search(Event.Text) }
                         });
                         break;
 
@@ -94,36 +95,111 @@ namespace CaiqueServer.Firebase
                         Music.Streamer.Get(Event.Chat).Skip();
                         break;
 
-                    case "reg":
-                        await SendChatList(Event.Sender, In.From);
+                    case "mplaying":
+                        Music.SongData Song;
+                        if (Music.Streamer.TryGetSong(Event.Chat, out Song))
+                        {
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data = new Event
+                                {
+                                    Chat = Event.Chat,
+                                    Type = "play",
+                                    Text = Song.Title,
+                                    Sender = Song.Adder
+                                }
+                            });
+                        }
                         break;
 
-                    case "profile":
-                        /*Messaging.Send(new SendMessage
+                    case "mpush":
+                        var Split = Event.Text.Split(' ');
+
+                        int Place, ToPlace = 1;
+                        if (int.TryParse(Split[0], out Place))
+                        {
+                            if (Split.Length == 3)
+                            {
+                                int.TryParse(Split[2], out ToPlace);
+                            }
+
+                            Event.Text = Music.Streamer.Get(Event.Chat).Push(Place, ToPlace).ToString();
+                            Event.Sender = null;
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data =  Event
+                            });
+                        }
+                        break;
+
+                    case "mremove":
+                        int ToRemove;
+                        if (int.TryParse(Event.Text, out ToRemove))
+                        {
+                            Event.Text = Music.Streamer.Get(Event.Chat).Remove(ToRemove).ToString();
+                            Event.Sender = null;
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data = Event
+                            });
+                        }
+                        break;
+
+                    case "mqueue":
+                        Event.Text = Music.Streamer.Serialize(Event.Chat);
+                        Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = User
-                        });*/
+                            Data = Event
+                        });
+                        break;
+
+                    case "reg":
+                        await SendChatList(Event.Sender, In.From);
+                        return;
+
+                    case "profile":
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = Database.Client.Get($"user/{Event.Sender}/data").ResultAs<DatabaseUser>()
+                        });
                         break;
 
                     case "newchat":
-                        var Id = await Database.Client.PushAsync("chat", new DatabaseChat
+                        var Id = await Database.Client.PushAsync("chat", new
                         {
-                            Title = Event.Text,
-                            Picture = "893b5376-6e5a-4699-bb71-f360c6ebe8d7",
-                            Tags = new[] { "test" }
+                            data = new DatabaseChat
+                            {
+                                Title = Event.Text,
+                                Picture = "893b5376-6e5a-4699-bb71-f360c6ebe8d7",
+                                Tags = new[] { "test", "anime", "manga", "fps", "moba" }
+                            }
                         });
 
-                        await Database.Client.SetAsync($"member/{Event.Sender}/{Id.Result.Name}", true);
+                        await Database.Client.SetAsync($"user/{Event.Sender}/member/{Id.Result.Name}", true);
+                        break;
+
+                    case "searchtag":                   
+                        Messaging.Send(new SendMessage
+                        {
+                            To = In.From,
+                            Data = new { type = "tagres", r = Chat.Home.ByTags(Event.Text.Split(',')) }
+                        });
                         break;
 
                     case "update":
-                        //ToDo: Update DB
-                        //Chat.Home.ById(Event.Chat).Distribute(Event);
+                        await Database.Client.SetAsync($"chat/{Event.Chat}/data/title", Event.Text);
+                        await Database.Client.SetAsync($"chat/{Event.Chat}/data/picture", Event.Attachment);
+
+                        Chat.Home.ById(Event.Chat).Distribute(Event);
                         break;
                 }
 
-                var User = Database.Client.Get($"user/{Event.Sender}").ResultAs<DatabaseUser>();
+                var User = Database.Client.Get($"user/{Event.Sender}/data").ResultAs<DatabaseUser>();
                 Console.WriteLine("-- Upstream from " + User.Name + " " + Event.Type + " " + Event.Text);
             }
         }

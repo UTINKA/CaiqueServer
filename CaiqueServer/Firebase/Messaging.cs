@@ -93,7 +93,7 @@ namespace CaiqueServer.Firebase
                             {
                                 if (Out.Priority == "high")
                                 {
-                                    await Database.Client.PushAsync($"message/{Out.To.Split('%')[1]}", Out.Data);
+                                    await Database.Client.PushAsync($"chat/{Out.To.Split('%')[1]}/message", Out.Data);
                                     Interlocked.Increment(ref Saves);
                                 }
                             }
