@@ -69,7 +69,8 @@ namespace CaiqueServer.Music
                     }
 
                     //Console.WriteLine(MaxVid.FormatCode + " " + MaxVid.AdaptiveKind + " " + MaxVid.AudioBitrate + " " + MaxVid.FileExtension + " " + MaxVid.Format + " " + MaxVid.IsEncrypted + " " + MaxVid.Resolution + " " + FullName ?? string.Empty);
-                    return MaxVid?.Uri ?? string.Empty;
+                    return MaxVid?.GetUri() ?? string.Empty;
+                    //return LibVideoExtender.VideoExtender.GetStreamUrlAAC(Url);
                 }
                 else if (Type == SongType.SoundCloud)
                 {

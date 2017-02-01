@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using VideoLibrary.Exceptions;
 
 namespace VideoLibrary.Helpers
 {
@@ -13,7 +16,6 @@ namespace VideoLibrary.Helpers
 
         public Query(string uri)
         {
-            //System.Diagnostics.Debug.WriteLine(uri);
             int divide = uri.IndexOf('?');
 
             if (divide == -1)
@@ -46,16 +48,20 @@ namespace VideoLibrary.Helpers
             {
                 string pair = keyValues[i];
                 int equals = pair.IndexOf('=');
-                /*if (equals != pair.LastIndexOf('='))
-                    throw new BadQueryException();*/
-                
-                if (equals >= 0)
+                string key;
+                string value;
+                if (equals != pair.LastIndexOf('='))
                 {
-                    string key = pair.Substring(0, equals);
-                    string value = pair.Substring(equals + 1);
-
-                    pairs[i] = new KeyValuePair<string, string>(key, value);
+                    key = pair.Substring(0, equals);
+                    value = String.Empty;
                 }
+                else
+                {
+                    key = pair.Substring(0, equals);
+                    value = pair.Substring(equals + 1);
+                }
+
+                pairs[i] = new KeyValuePair<string, string>(key, value);
             }
 
             this.count = keyValues.Length;
@@ -72,8 +78,7 @@ namespace VideoLibrary.Helpers
                         return pair.Value;
                 }
 
-                //throw new KeyNotFoundException();
-                return string.Empty;
+                throw new KeyNotFoundException();
             }
 
             set

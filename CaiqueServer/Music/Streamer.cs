@@ -26,7 +26,7 @@ namespace CaiqueServer.Music
         internal static bool TryGetSong(string Chat, out SongData Out)
         {
             Streamer Streamer;
-            if (Streamers.TryGetValue(Chat, out Streamer) && Streamer.Song.FullName != null)
+            if (Streamers.TryGetValue(Chat, out Streamer) && Streamer.Song.Url != null)
             {
                 Out = Streamers[Chat].Song;
                 return true;
@@ -114,7 +114,7 @@ namespace CaiqueServer.Music
                         {
                             ProcessStartInfo.Arguments += $"-c:a aac -b:a 96k -ac 2 -ar 48k ";
                         }
-                        ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id}";
+                        ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id.GetHashCode()}";
 
                         ProcessWaiter = new TaskCompletionSource<bool>();
 
@@ -127,6 +127,7 @@ namespace CaiqueServer.Music
 
                         Handler = async (s, e) =>
                         {
+                            Console.WriteLine(e.Data ?? "");
                             if (e.Data?.StartsWith("size=") ?? false)
                             {
                                 Ffmpeg.ErrorDataReceived -= Handler;
@@ -157,6 +158,11 @@ namespace CaiqueServer.Music
                 catch (Exception Ex)
                 {
                     Console.WriteLine(Ex.ToString());
+                }
+                finally
+                {
+                    Song.Url = null;
+                    Console.WriteLine("Stopped Playing");
                 }
             }
         }

@@ -81,6 +81,7 @@ namespace VideoLibrary
                     case 82:
                     case 83:
                         return 96;
+                    case 22:
                     case 37:
                     case 38:
                     case 45:
@@ -89,7 +90,6 @@ namespace VideoLibrary
                     case 102:
                     case 172:
                         return 192;
-                    case 22:
                     case 34:
                     case 35:
                     case 43:

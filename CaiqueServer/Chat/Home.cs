@@ -24,28 +24,35 @@ namespace CaiqueServer.Chat
             });
         }
 
-        internal static async Task<IOrderedEnumerable<KeyValuePair<string, DatabaseChat>>> ByTags(string[] Tags)
+        internal static async Task<Dictionary<string, DatabaseChat>> ByTags(string[] Tags)
         {
             List<string> ChatKeys = null;
+            var Chats = new Dictionary<string, DatabaseChat>();
+
             foreach (var Tag in Tags)
             {
+                var TagResults = (await Firebase.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>();
+                if (TagResults == null)
+                {
+                    return Chats;
+                }
+
                 if (ChatKeys == null)
                 {
-                    ChatKeys = (await Firebase.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>().Keys.ToList();
+                    ChatKeys = TagResults.Keys.ToList();
                 }
                 else
                 {
-                    ChatKeys = (await Firebase.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>().Keys.Where(x => ChatKeys.Contains(x)).ToList();
+                    ChatKeys = TagResults.Keys.Where(x => ChatKeys.Contains(x)).ToList();
                 }
             }
 
-            var Chats = new Dictionary<string, DatabaseChat>();
             foreach (var ChatKey in ChatKeys)
             {
                 Chats.Add(ChatKey, (await Firebase.Database.Client.GetAsync($"chat/{ChatKey}/data")).ResultAs<DatabaseChat>());
             }
 
-            return Chats.OrderBy(x => x.Value.Tags.Length);
+            return Chats.OrderBy(x => x.Value.Tags.Length).ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }

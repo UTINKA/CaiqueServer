@@ -12,15 +12,14 @@ namespace CaiqueServer.Firebase
 
         private static async Task SendChatList(string Id, string Token)
         {
-            var Chats = await Database.Client.GetAsync($"user/{Id}/member");
-            var List = Chats.ResultAs<Dictionary<string, bool>>();
+            var Chats = (await Database.Client.GetAsync($"user/{Id}/member")).ResultAs<Dictionary<string, bool>>();
 
-            if (List != null)
+            if (Chats != null)
             {
                 Messaging.Send(new SendMessage
                 {
                     To = Token,
-                    Data = new { type = "list", chats = List.Keys }
+                    Data = new { type = "list", chats = Chats.Keys }
                 });
             }
         }
@@ -183,11 +182,23 @@ namespace CaiqueServer.Firebase
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{Id.Result.Name}", true);
                         break;
 
+                    case "joinchat":
+                        if ((await Database.Client.GetAsync($"chat/{Event.Chat}/data/title")).ResultAs<string>() != null)
+                        {
+                            await Database.Client.SetAsync($"user/{Event.Sender}/member/{Event.Chat}", true);
+                        }
+
+                        break;
+
+                    case "leavechat":
+                        await Database.Client.DeleteAsync($"user/{Event.Sender}/member/{Event.Chat}");
+                        break;
+
                     case "searchtag":                   
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { type = "tagres", r = Chat.Home.ByTags(Event.Text.Split(',')) }
+                            Data = new { type = "tagres", r = await Chat.Home.ByTags(Event.Text.Split(',')) }
                         });
                         break;
 

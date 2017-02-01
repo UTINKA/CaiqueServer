@@ -100,12 +100,17 @@ namespace CaiqueServer.Firebase
                         }
                         else
                         {
-                            Console.WriteLine("Message " + MessageId + " status " + SentAck.Error + " " + SentAck.ErrorDesc + " - trying again in 1.5s");
+                            Console.WriteLine("Message " + MessageId + " status " + SentAck.Error + " " + SentAck.ErrorDesc);
 
                             if (WaitAck.TryGetValue(MessageId, out Out))
                             {
-                                await Task.Delay(1500);
-                                Resend(Out);
+                                Console.WriteLine(Out.ToString());
+
+                                if (SentAck.Error != "INVALID_REQUEST")
+                                {
+                                    await Task.Delay(1500);
+                                    Resend(Out);
+                                }
                             }
                             else
                             {

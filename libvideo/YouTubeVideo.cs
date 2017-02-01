@@ -14,33 +14,30 @@ namespace VideoLibrary
         private bool encrypted;
 
         internal YouTubeVideo(string title, 
-            UnscrambledQuery query, string jsPlayer)
+            UnscrambledQuery query, string jsPlayer, bool manifestExist = false)
         {
             this.Title = title;
             this.uri = query.Uri;
             this.jsPlayer = jsPlayer;
             this.encrypted = query.IsEncrypted;
-            try
+            if (manifestExist)
             {
-                this.FormatCode = int.Parse(new Query(uri)["itag"]);
+                // Link contain "key/value"
+                // separated by slash
+                string x = uri.Substring(uri.IndexOf("itag/") + 5, 3);
+                x = x.TrimEnd('/'); // In case format is 2-digit
+                this.FormatCode = int.Parse(x);
             }
-            catch
-            {
-                this.FormatCode = 0;
-            }
+            else this.FormatCode = int.Parse(new Query(uri)["itag"]);
         }
 
         public override string Title { get; }
         public override WebSites WebSite => WebSites.YouTube;
 
-        public override string Uri =>
-            GetUriAsync().GetAwaiter().GetResult();
-
-        public string GetUri(Func<DelegatingClient> makeClient) =>
-            GetUriAsync(makeClient).GetAwaiter().GetResult();
-
-        public override Task<string> GetUriAsync() =>
-            GetUriAsync(() => new DelegatingClient());
+        public override Task<string> GetUriAsync()
+        {
+            return GetUriAsync(() => new DelegatingClient());
+        }
 
         public async Task<string> GetUriAsync(Func<DelegatingClient> makeClient)
         {

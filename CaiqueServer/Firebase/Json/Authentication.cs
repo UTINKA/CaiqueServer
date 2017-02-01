@@ -12,49 +12,51 @@ namespace CaiqueServer.Firebase.Json
             return JsonConvert.DeserializeObject<Authentication>(Res);
         }
 
-        [JsonProperty("iss", Required = Required.Always)]
+        [JsonProperty("iss", Required = Required.Default)]
         public string ISS;
 
-        [JsonProperty("aud", Required = Required.Always)]
+        [JsonProperty("aud", Required = Required.Default)]
         public string Aud;
 
+        // Google Account ID
         [JsonProperty("sub", Required = Required.Always)]
         public string Sub;
 
-        [JsonProperty("email_verified", Required = Required.Always)]
+        [JsonProperty("email_verified", Required = Required.Default)]
         public bool EmailVerified;
 
-        [JsonProperty("azp", Required = Required.Always)]
+        [JsonProperty("azp", Required = Required.Default)]
         public string Azp;
 
-        [JsonProperty("email", Required = Required.Always)]
+        [JsonProperty("email", Required = Required.Default)]
         public string Email;
 
-        [JsonProperty("iat", Required = Required.Always)]
+        [JsonProperty("iat", Required = Required.Default)]
         public int Iat;
 
-        [JsonProperty("exp", Required = Required.Always)]
+        [JsonProperty("exp", Required = Required.Default)]
         public int Expiration;
 
+        // Full Name
         [JsonProperty("name", Required = Required.Always)]
         public string Name;
 
         [JsonProperty("picture", Required = Required.Always)]
         public string Picture;
 
-        [JsonProperty("given_name", Required = Required.Always)]
+        [JsonProperty("given_name", Required = Required.Default)]
         public string FirstName;
 
-        [JsonProperty("family_name", Required = Required.Always)]
+        [JsonProperty("family_name", Required = Required.Default)]
         public string FamilyName;
 
-        [JsonProperty("locale", Required = Required.Always)]
+        [JsonProperty("locale", Required = Required.Default)]
         public string Locale;
 
-        [JsonProperty("alg", Required = Required.Always)]
+        [JsonProperty("alg", Required = Required.Default)]
         public string Alg;
 
-        [JsonProperty("kid", Required = Required.Always)]
+        [JsonProperty("kid", Required = Required.Default)]
         public string KId;
     }
 }
