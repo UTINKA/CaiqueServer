@@ -1,4 +1,4 @@
-﻿using CaiqueServer.Firebase.Json;
+﻿using CaiqueServer.Cloud.Json;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace CaiqueServer.Chat
 
             foreach (var Tag in Tags)
             {
-                var TagResults = (await Firebase.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>();
+                var TagResults = (await Cloud.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>();
                 if (TagResults == null)
                 {
                     return Chats;
@@ -49,7 +49,7 @@ namespace CaiqueServer.Chat
 
             foreach (var ChatKey in ChatKeys)
             {
-                Chats.Add(ChatKey, (await Firebase.Database.Client.GetAsync($"chat/{ChatKey}/data")).ResultAs<DatabaseChat>());
+                Chats.Add(ChatKey, (await Cloud.Database.Client.GetAsync($"chat/{ChatKey}/data")).ResultAs<DatabaseChat>());
             }
 
             return Chats.OrderBy(x => x.Value.Tags.Length).ToDictionary(x => x.Key, x => x.Value);

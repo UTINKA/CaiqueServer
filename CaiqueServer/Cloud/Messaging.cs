@@ -2,7 +2,7 @@
 using agsXMPP.Net;
 using agsXMPP.protocol.client;
 using agsXMPP.Xml.Dom;
-using CaiqueServer.Firebase.Json;
+using CaiqueServer.Cloud.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CaiqueServer.Firebase
+namespace CaiqueServer.Cloud
 {
     class Messaging
     {

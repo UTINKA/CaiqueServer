@@ -90,7 +90,9 @@ namespace agsXMPP.Net
         /// </summary>
         private Inflater inflater = null;
   
+#pragma warning disable CS3003 // Type is not CLS-compliant
         public IProxyClient Proxy { get; set; }
+#pragma warning restore CS3003 // Type is not CLS-compliant
 
         #region << Constructor >>
         public ClientSocket()

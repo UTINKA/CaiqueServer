@@ -24,7 +24,7 @@ namespace CaiqueServer
 
             Console.WriteLine("Icecast server started");
             
-            if (!Firebase.Messaging.Start().Result)
+            if (!Cloud.Messaging.Start().Result)
             {
                 Console.WriteLine("Auth Error!");
             }
@@ -33,8 +33,8 @@ namespace CaiqueServer
             {
                 Console.WriteLine("Shutting down..");
 
-                var StopFCM = Firebase.Messaging.Stop();
-                Firebase.Database.Stop();
+                var StopFCM = Cloud.Messaging.Stop();
+                Cloud.Database.Stop();
                 Streamer.Shutdown();
                 IcecastProcess.Dispose();
                 StopFCM.Wait();
@@ -44,7 +44,7 @@ namespace CaiqueServer
 
             while (true)
             {
-                Console.Title = "Caique " + Firebase.Messaging.Acks + " " + Firebase.Messaging.WaitAck.Count + " " + Firebase.Messaging.Saves;
+                Console.Title = "Caique " + Cloud.Messaging.Acks + " " + Cloud.Messaging.WaitAck.Count + " " + Cloud.Messaging.Saves;
                 Task.Delay(100).Wait();
             }
         }

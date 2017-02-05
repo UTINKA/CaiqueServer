@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace CaiqueServer.Firebase.Json
+namespace CaiqueServer.Cloud.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
     class SendMessage

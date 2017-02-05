@@ -142,7 +142,7 @@ namespace FireSharp
 
         private Uri PrepareApiUri(string path, QueryBuilder queryBuilder)
         {
-            string uriString = $"https://auth.firebase.com/v2/{_config.Host}/{path}?{queryBuilder.ToQueryString()}";
+            string uriString = $"https://auth.Cloud.com/v2/{_config.Host}/{path}?{queryBuilder.ToQueryString()}";
             return new Uri(uriString);
         }
     }

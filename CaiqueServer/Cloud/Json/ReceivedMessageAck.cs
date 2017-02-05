@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace CaiqueServer.Firebase.Json
+namespace CaiqueServer.Cloud.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
     class ReceivedMessageAck

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace CaiqueServer.Firebase.Json
+namespace CaiqueServer.Cloud.Json
 {
     [JsonObject(MemberSerialization.OptIn)]
     class Authentication

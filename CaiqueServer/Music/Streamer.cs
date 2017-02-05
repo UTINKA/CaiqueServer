@@ -114,7 +114,7 @@ namespace CaiqueServer.Music
                         {
                             ProcessStartInfo.Arguments += $"-c:a aac -b:a 96k -ac 2 -ar 48k ";
                         }
-                        ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id.GetHashCode()}";
+                        ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id}";
 
                         ProcessWaiter = new TaskCompletionSource<bool>();
 
@@ -133,7 +133,7 @@ namespace CaiqueServer.Music
                                 Ffmpeg.ErrorDataReceived -= Handler;
                                 await Task.Delay(250).ContinueWith(delegate
                                 {
-                                    Chat.Home.ById(Id).Distribute(new Firebase.Json.Event
+                                    Chat.Home.ById(Id).Distribute(new Cloud.Json.Event
                                     {
                                         Chat = Id,
                                         Type = "play",

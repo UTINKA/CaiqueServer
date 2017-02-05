@@ -1,10 +1,10 @@
-﻿using CaiqueServer.Firebase.Json;
+﻿using CaiqueServer.Cloud.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CaiqueServer.Firebase
+namespace CaiqueServer.Cloud
 {
     class MessagingHandlers
     {
@@ -45,18 +45,18 @@ namespace CaiqueServer.Firebase
                     Console.WriteLine("Register with " + Userdata.Email);
 
                     await Database.Client.SetAsync($"token/{In.From}", new { key = Userdata.Sub });
-                    await SendChatList(Userdata.Sub, In.From);
+                    //await SendChatList(Userdata.Sub, In.From);
 
                     if ((await Database.Client.GetAsync($"user/{Userdata.Sub}/data")).ResultAs<DatabaseUser>() == null)
                     {
                         await Database.Client.SetAsync($"user/{Userdata.Sub}/data", new DatabaseUser
                         {
-                            Name = Userdata.Name,
-                            Picture = Userdata.Picture
+                            Name = Userdata.Name
                         });
 
-                        // ToDo: Remove
-                        await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("empty.png", System.IO.FileMode.Open));
+
+                        /*await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
 
                         Messaging.Send(new SendMessage
                         {
@@ -66,7 +66,7 @@ namespace CaiqueServer.Firebase
                                 Type = "regdone",
                                 Text = "Registered as " + Userdata.Name + " and auto-joined the starting chat"
                             }
-                        });
+                        });*/
                     }
                 }
             }
@@ -156,17 +156,17 @@ namespace CaiqueServer.Firebase
                         });
                         break;
 
-                    case "reg":
+                    /*case "reg":
                         await SendChatList(Event.Sender, In.From);
-                        return;
+                        return;*/
 
-                    case "profile":
+                    /*case "profile":
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
                             Data = Database.Client.Get($"user/{Event.Sender}/data").ResultAs<DatabaseUser>()
                         });
-                        break;
+                        break;*/
 
                     case "newchat":
                         var Id = await Database.Client.PushAsync("chat", new
@@ -174,12 +174,15 @@ namespace CaiqueServer.Firebase
                             data = new DatabaseChat
                             {
                                 Title = Event.Text,
-                                Picture = "893b5376-6e5a-4699-bb71-f360c6ebe8d7",
                                 Tags = new[] { "test", "anime", "manga", "fps", "moba" }
                             }
                         });
 
-                        await Database.Client.SetAsync($"user/{Event.Sender}/member/{Id.Result.Name}", true);
+                        var ChatId = Id.Result.Name.ToString();
+
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("empty.png", System.IO.FileMode.Open));
+                        await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
+
                         break;
 
                     case "joinchat":

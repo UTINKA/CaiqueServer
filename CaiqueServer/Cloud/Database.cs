@@ -3,7 +3,7 @@ using FireSharp.Config;
 using FireSharp.Exceptions;
 using System;
 
-namespace CaiqueServer.Firebase
+namespace CaiqueServer.Cloud
 {
     class Database
     {
