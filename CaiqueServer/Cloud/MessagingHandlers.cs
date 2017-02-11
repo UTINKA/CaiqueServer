@@ -54,19 +54,9 @@ namespace CaiqueServer.Cloud
                             Name = Userdata.Name
                         });
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("empty.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/empty.png", System.IO.FileMode.Open));
 
-                        /*await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
-
-                        Messaging.Send(new SendMessage
-                        {
-                            To = In.From,
-                            Data = new Event
-                            {
-                                Type = "regdone",
-                                Text = "Registered as " + Userdata.Name + " and auto-joined the starting chat"
-                            }
-                        });*/
+                        await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
                     }
                 }
             }
@@ -180,7 +170,7 @@ namespace CaiqueServer.Cloud
 
                         var ChatId = Id.Result.Name.ToString();
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("empty.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/empty.png", System.IO.FileMode.Open));
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
 
                         break;
