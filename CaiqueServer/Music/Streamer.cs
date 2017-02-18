@@ -105,7 +105,7 @@ namespace CaiqueServer.Music
 
                     using (Ffmpeg = new Process())
                     {
-                        ProcessStartInfo.Arguments = $"-re -i \"{Song.StreamUrl}\" -vn -content_type audio/aac -f adts ";
+                        ProcessStartInfo.Arguments = $"-re -i \"{await Song.StreamUrl()}\" -vn -content_type audio/aac -f adts ";
                         if (Song.Type == SongType.YouTube || Song.Type == SongType.Uploaded)
                         {
                             ProcessStartInfo.Arguments += "-c:a copy ";
@@ -167,9 +167,9 @@ namespace CaiqueServer.Music
             }
         }
 
-        internal bool Enqueue(string Song, string Adder)
+        internal async Task<bool> Enqueue(string Song, string Adder)
         {
-            var Results = SongData.Search(Song, 1);
+            var Results = await SongData.Search(Song, Adder, true);
             if (Results.Count == 0)
             {
                 return false;

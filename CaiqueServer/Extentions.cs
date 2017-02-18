@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
+//using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,7 +45,7 @@ namespace CaiqueServer
             });
         }
 
-        public static Task ConnectAsync(this Socket Connection, IPEndPoint EndPoint)
+        /*public static Task ConnectAsync(this Socket Connection, IPEndPoint EndPoint)
         {
             return Task.Factory.FromAsync(Connection.BeginConnect(EndPoint, null, null), Connection.EndConnect);
         }
@@ -58,7 +58,7 @@ namespace CaiqueServer
         public static Task DisconnectAsync(this Socket Connection)
         {
             return Task.Factory.FromAsync(Connection.BeginDisconnect(false, null, null), Connection.EndDisconnect);
-        }
+        }*/
 
         public static bool IsValidUrl(this string Text)
         {
@@ -68,24 +68,54 @@ namespace CaiqueServer
 
         public static async Task<string> WebResponse(this string Url, WebHeaderCollection Headers = null)
         {
-            for (int i = 0; i < 10; i++)
+            try
             {
-                try
+                for (int i = 0; i < 5; i++)
                 {
-                    WebRequest Request = WebRequest.Create(Url);
-                    if (Headers != null)
+                    try
                     {
-                        Request.Headers = Headers;
-                    }
+                        WebRequest Request = WebRequest.Create(Url);
+                        if (Headers != null)
+                        {
+                            Request.Headers = Headers;
+                        }
 
-                    return await new StreamReader(Request.GetResponse().GetResponseStream()).ReadToEndAsync();
+                        return await new StreamReader(
+                                (await Request.GetResponseAsync())
+                                .GetResponseStream()
+                            )
+                            .ReadToEndAsync();
+                    }
+                    catch (Exception Ex2)
+                    {
+                        if (i == 4)
+                        {
+                            throw Ex2;
+                        }
+                    }
                 }
-                catch
-                {
-                }
+            }
+            catch (Exception Ex)
+            {
+                Console.WriteLine(Ex);
             }
 
             return string.Empty;
+        }
+
+        public static StringBuilder UcWords(this object theString)
+        {
+            var output = new StringBuilder();
+            var pieces = theString.ToString().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var piece in pieces)
+            {
+                var theChars = piece.ToCharArray();
+                theChars[0] = char.ToUpper(theChars[0]);
+                output.Append(' ');
+                output.Append(new string(theChars));
+            }
+
+            return output;
         }
     }
 }

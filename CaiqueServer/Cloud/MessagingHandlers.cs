@@ -76,7 +76,7 @@ namespace CaiqueServer.Cloud
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { type = "mres", r = Music.SongData.Search(Event.Text) }
+                            Data = new { type = "mres", r = await Music.SongData.Search(Event.Text, Event.Sender) }
                         });
                         break;
 
