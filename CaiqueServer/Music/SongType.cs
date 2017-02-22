@@ -2,8 +2,7 @@
 {
     enum SongType
     {
-        Local,
-        Remote,
+        File,
         YouTube,
         SoundCloud,
         Uploaded

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using System.Xml;
 using VideoLibrary;
 
 namespace CaiqueServer.Music
@@ -98,23 +99,11 @@ namespace CaiqueServer.Music
             var Match = YoutubeVideoRegex.Match(Query);
             if (Match.Success)
             {
-                var Search = YT.Videos.List("snippet");
-                Search.Id = Match.Groups[4].Value;
-                var Videos = await Search.ExecuteAsync();
-                var Result = Videos.Items.First();
-                if (Result != null)
+                var ResultData = await YouTubeParse(Match.Groups[4].Value);
+                if (ResultData != null)
                 {
-                    Results.Add(new SongData
-                    {
-                        FullName = Result.Snippet.Title,
-                        Description = "YouTube | " + Result.Snippet.Description,
-                        Url = $"http://www.youtube.com/watch?v={Search.Id}",
-                        Adder = Adder,
-                        Type = SongType.YouTube,
-                        Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
-                    });
+                    Results.Add((SongData)ResultData);
                 }
-
             }
             else if (Regex.IsMatch(Query, "(.*)(soundcloud.com|snd.sc)(.*)"))
             {
@@ -128,11 +117,10 @@ namespace CaiqueServer.Music
             {
                 Results.Add(new SongData
                 {
-                    FullName = Query,
-                    Description = string.Empty,
+                    FullName = Path.GetFileNameWithoutExtension(Query),
+                    Description = $"Remote file",
                     Url = Query,
-                    Adder = Adder,
-                    Type = SongType.Remote
+                    Type = SongType.File
                 });
             }
 
@@ -140,14 +128,12 @@ namespace CaiqueServer.Music
             {
                 var Range = Dir.GetFiles()
                     .Where(x => x.Name.Length >= Query.Length && x.Name.ToLower().Contains(Query.ToLower()) && !x.Attributes.HasFlag(FileAttributes.System))
-                    .OrderBy(x => x.Name)
                     .Select(x => new SongData
                     {
                         FullName = x.Name,
-                        Description = $"Local {x.Extension.Substring(1).ToUpper()} File",
+                        Description = $"{x.Extension} file at {x.DirectoryName}",
                         Url = x.FullName,
-                        Adder = Adder,
-                        Type = SongType.Local
+                        Type = SongType.File
                     });
 
                 if (Range.Count() > 3)
@@ -168,15 +154,11 @@ namespace CaiqueServer.Music
                 ListRequest.Type = "video";
                 foreach (var Result in (await ListRequest.ExecuteAsync()).Items)
                 {
-                    Results.Add(new SongData
+                    var ResultData = await YouTubeParse(Result.Id.VideoId);
+                    if (ResultData != null)
                     {
-                        FullName = Result.Snippet.Title,
-                        Description = "YouTube | " + Result.Snippet.Description,
-                        Url = $"http://www.youtube.com/watch?v={Result.Id.VideoId}",
-                        Adder = Adder,
-                        Type = SongType.YouTube,
-                        Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
-                    });
+                        Results.Add((SongData)ResultData);
+                    }
                 }
 
                 var SCResponse = JArray.Parse(await SC);
@@ -193,6 +175,40 @@ namespace CaiqueServer.Music
             }
 
             return Results;
+        }
+
+        private static async Task<SongData?> YouTubeParse(string VideoId)
+        {
+            var Search = YT.Videos.List("contentDetails,snippet");
+            Search.Id = VideoId;
+
+            var Videos = await Search.ExecuteAsync();
+            var Result = Videos.Items.FirstOrDefault();
+
+            if (Result != null)
+            {
+                var Desc = Result.Snippet.Description;
+                if (Desc.Length == 0)
+                {
+                    Desc = "No description";
+                }
+
+                return new SongData
+                {
+                    FullName = Result.Snippet.Title,
+                    Description = $"{TimeSpanToString(XmlConvert.ToTimeSpan(Result.ContentDetails.Duration))} on YouTube | {Desc}",
+                    Url = $"http://www.youtube.com/watch?v={Search.Id}",
+                    Type = SongType.YouTube,
+                    Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
+                };
+            }
+
+            return null;
+        }
+
+        private static string StripHtml(string In)
+        {
+            return Regex.Replace(In, @"<[^>]*>", string.Empty);
         }
 
         private static SongData SoundCloudParse(JToken Response, string Adder)
@@ -212,12 +228,23 @@ namespace CaiqueServer.Music
             return new SongData
             {
                 FullName = Response["title"].ToString(),
-                Description = $"SoundCloud | {Desc.Trim()}",
+                Description = $"{TimeSpanToString(new TimeSpan(0, 0, 0, 0, Response["duration"].ToObject<int>()))} on SoundCloud | {StripHtml(Desc.Trim())}",
                 Url = Response["uri"].ToString(),
-                Adder = Adder,
                 Type = SongType.SoundCloud,
                 Thumbnail = Thumb
             };
+        }
+
+        private static string TimeSpanToString(TimeSpan Span)
+        {
+            var TimeStr = $"{Span.Minutes.ToString().PadLeft(2, '0')}:{Span.Seconds.ToString().PadLeft(2, '0')}";
+            var Hours = Span.Days * 24 + Span.Hours;
+            if (Hours != 0)
+            {
+                TimeStr = $"{Hours}:{TimeStr}";
+            }
+
+            return TimeStr;
         }
     }
 }
