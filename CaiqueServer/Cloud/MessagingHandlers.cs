@@ -1,4 +1,5 @@
 ﻿using CaiqueServer.Cloud.Json;
+using MusicSearch;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ namespace CaiqueServer.Cloud
                             Name = Userdata.Name
                         });
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/empty.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/emptyUser.png", System.IO.FileMode.Open));
 
                         await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
                     }
@@ -62,6 +63,7 @@ namespace CaiqueServer.Cloud
             }
             else
             {
+                Song Song;
                 switch (Event.Type)
                 {
                     case "text":
@@ -76,7 +78,7 @@ namespace CaiqueServer.Cloud
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { type = "mres", r = await Music.SongData.Search(Event.Text, Event.Sender) }
+                            Data = new { type = "mres", r = await SongRequest.Search(Event.Text) }
                         });
                         break;
 
@@ -85,7 +87,6 @@ namespace CaiqueServer.Cloud
                         break;
 
                     case "mplaying":
-                        Music.SongData Song;
                         if (Music.Streamer.TryGetSong(Event.Chat, out Song))
                         {
                             Messaging.Send(new SendMessage
@@ -102,7 +103,7 @@ namespace CaiqueServer.Cloud
                         }
                         break;
 
-                    case "mpush":
+                    /*case "mpush":
                         var Split = Event.Text.Split(' ');
 
                         int Place, ToPlace = 1;
@@ -113,7 +114,7 @@ namespace CaiqueServer.Cloud
                                 int.TryParse(Split[2], out ToPlace);
                             }
 
-                            Event.Text = Music.Streamer.Get(Event.Chat).Push(Place, ToPlace).ToString();
+                            Event.Text = Music.Streamer.Get(Event.Chat).Queue.Push(Place, ToPlace).ToString();
                             Event.Sender = null;
                             Messaging.Send(new SendMessage
                             {
@@ -121,19 +122,22 @@ namespace CaiqueServer.Cloud
                                 Data =  Event
                             });
                         }
-                        break;
+                        break;*/
 
                     case "mremove":
-                        int ToRemove;
-                        if (int.TryParse(Event.Text, out ToRemove))
+                        ushort ToRemove;
+                        if (ushort.TryParse(Event.Text, out ToRemove) && ToRemove-- != 0)
                         {
-                            Event.Text = Music.Streamer.Get(Event.Chat).Remove(ToRemove).ToString();
-                            Event.Sender = null;
-                            Messaging.Send(new SendMessage
+                            if (Music.Streamer.Get(Event.Chat).Queue.TryRemove(ToRemove, out Song))
                             {
-                                To = In.From,
-                                Data = Event
-                            });
+                                Event.Text = Song.Title;
+                                Event.Sender = null;
+                                Messaging.Send(new SendMessage
+                                {
+                                    To = In.From,
+                                    Data = Event
+                                });
+                            }
                         }
                         break;
 
@@ -170,7 +174,7 @@ namespace CaiqueServer.Cloud
 
                         var ChatId = Id.Result.Name.ToString();
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/empty.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/emptyChat.png", System.IO.FileMode.Open));
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
 
                         break;
@@ -204,7 +208,7 @@ namespace CaiqueServer.Cloud
                 }
 
                 var User = Database.Client.Get($"user/{Event.Sender}/data").ResultAs<DatabaseUser>();
-                Console.WriteLine("-- Upstream from " + User.Name + " " + Event.Type + " " + Event.Text);
+                Console.WriteLine($"{DateTime.Now.ToLongTimeString()} -- Upstream from {User.Name} {Event.Type} {Event.Text}");
             }
         }
 

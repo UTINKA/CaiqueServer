@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using MusicSearch;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -23,16 +24,16 @@ namespace CaiqueServer.Music
             });
         }
 
-        internal static bool TryGetSong(string Chat, out SongData Out)
+        internal static bool TryGetSong(string Chat, out Song Out)
         {
             Streamer Streamer;
-            if (Streamers.TryGetValue(Chat, out Streamer) && Streamer.Song.Url != null)
+            if (Streamers.TryGetValue(Chat, out Streamer) && Streamer.Queue.IsPlaying)
             {
-                Out = Streamers[Chat].Song;
+                Out = Streamer.Queue.Playing;
                 return true;
             }
 
-            Out = new SongData();
+            Out = new Song();
             return false;
         }
 
@@ -63,9 +64,7 @@ namespace CaiqueServer.Music
         }
 
         internal Process Ffmpeg { get; private set; }
-        internal SongData Song;
-        private ConcurrentQueue<SongData> Queue = new ConcurrentQueue<SongData>();
-        private const int MaxQueued = 16;
+        internal SongQueue Queue = new SongQueue();
 
         private TaskCompletionSource<bool> ProcessWaiter;
         private SemaphoreSlim WaitAdd = new SemaphoreSlim(0);
@@ -74,6 +73,7 @@ namespace CaiqueServer.Music
 
         internal Streamer(string Chat)
         {
+            Queue.MaxQueued = 16;
             Id = Chat;
 
             var Reset = new ManualResetEvent(false);
@@ -101,12 +101,12 @@ namespace CaiqueServer.Music
                 try
                 {
                     await WaitAdd.WaitAsync(Stop.Token);
-                    Queue.TryDequeue(out Song);
+                    Queue.Next();
 
                     using (Ffmpeg = new Process())
                     {
-                        ProcessStartInfo.Arguments = $"-re -i \"{await Song.StreamUrl()}\" -vn -content_type audio/aac -f adts ";
-                        if (Song.Type == SongType.YouTube || Song.Type == SongType.Uploaded)
+                        ProcessStartInfo.Arguments = $"-re -i \"{await Queue.StreamUrl(false)}\" -vn -content_type audio/aac -f adts ";
+                        if (Queue.Playing.Type == SongType.YouTube || Queue.Playing.Type == SongType.Uploaded)
                         {
                             ProcessStartInfo.Arguments += "-c:a copy ";
                         }
@@ -137,8 +137,8 @@ namespace CaiqueServer.Music
                                     {
                                         Chat = Id,
                                         Type = "play",
-                                        Text = Song.Title,
-                                        Sender = Song.Adder
+                                        Text = Queue.Playing.Title,
+                                        Sender = Queue.Playing.Adder
                                     });
                                 });
                             }
@@ -161,7 +161,7 @@ namespace CaiqueServer.Music
                 }
                 finally
                 {
-                    Song.Url = null;
+                    Queue.Invalidate();
                     Console.WriteLine("Stopped Playing");
                 }
             }
@@ -169,7 +169,7 @@ namespace CaiqueServer.Music
 
         internal async Task<bool> Enqueue(string Song, string Adder)
         {
-            var Results = await SongData.Search(Song, Adder, true);
+            var Results = await SongRequest.Search(Song, true);
             if (Results.Count == 0)
             {
                 return false;
@@ -178,53 +178,12 @@ namespace CaiqueServer.Music
             return Enqueue(Results[0], Adder);
         }
 
-        internal bool Enqueue(SongData Song, string Adder)
+        internal bool Enqueue(Song Song, string Adder)
         {
-            if (Queue.Count >= MaxQueued)
+            Song.Adder = Adder;
+            if (Queue.Enqueue(Song) != 0)
             {
-                return false;
-            }
-
-            Queue.Enqueue(Song);
-            WaitAdd.Release();
-            return true;
-        }
-
-        internal bool Push(int Place, int ToPlace)
-        {
-            var NewQueue = new ConcurrentQueue<SongData>();
-            var Songs = Queue.ToList();
-            if (Place > 0 && ToPlace > 0 && Songs.Count >= Place && Songs.Count >= ToPlace)
-            {
-                var Pushed = Songs[Place - 1];
-                Songs.Remove(Pushed);
-                Songs.Insert(ToPlace - 1, Pushed);
-
-                foreach (var Song in Songs)
-                {
-                    NewQueue.Enqueue(Song);
-                }
-
-                Queue = NewQueue;
-                return true;
-            }
-
-            return false;
-        }
-        
-        internal bool Remove(int ToRemove)
-        {
-            var NewQueue = new ConcurrentQueue<SongData>();
-            var Songs = Queue.ToList();
-            if (ToRemove > 0 && Songs.Count >= ToRemove)
-            {
-                Songs.Remove(Songs[ToRemove - 1]);
-                foreach (var Song in Songs)
-                {
-                    NewQueue.Enqueue(Song);
-                }
-
-                Queue = NewQueue;
+                WaitAdd.Release();
                 return true;
             }
 

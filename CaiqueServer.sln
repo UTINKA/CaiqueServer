@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26206.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CaiqueServer", "CaiqueServer\CaiqueServer.csproj", "{5374C096-CA53-4993-93D5-00B92B8829FF}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FireSharp", "FireSharp\FireSharp.csproj", "{67B7EA6F-DC34-4F48-8331-58DF137D78C9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libvideo", "libvideo\libvideo.csproj", "{4DFEDF29-6CB3-4369-8ED9-104A34B8A045}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicSearch", "MusicSearch\MusicSearch.csproj", "{F327E024-73D7-4EEF-86D9-79C9A5A52195}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{4DFEDF29-6CB3-4369-8ED9-104A34B8A045}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DFEDF29-6CB3-4369-8ED9-104A34B8A045}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DFEDF29-6CB3-4369-8ED9-104A34B8A045}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F327E024-73D7-4EEF-86D9-79C9A5A52195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F327E024-73D7-4EEF-86D9-79C9A5A52195}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F327E024-73D7-4EEF-86D9-79C9A5A52195}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F327E024-73D7-4EEF-86D9-79C9A5A52195}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
