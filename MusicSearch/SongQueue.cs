@@ -49,7 +49,7 @@ namespace MusicSearch
             if (CanAdd)
             {
                 Queue.Enqueue(Song);
-                return Queue.Count - 1;
+                return Queue.Count;
             }
 
             return 0;

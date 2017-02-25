@@ -112,7 +112,7 @@ namespace CaiqueServer.Music
                         }
                         else
                         {
-                            ProcessStartInfo.Arguments += $"-c:a aac -b:a 96k -ac 2 -ar 48k ";
+                            ProcessStartInfo.Arguments += $"-c:a aac -b:a 128k -ac 2 -ar 48k ";
                         }
                         ProcessStartInfo.Arguments += $"icecast://source:{IcecastPass}@localhost:80/{Id}";
 
@@ -169,7 +169,7 @@ namespace CaiqueServer.Music
 
         internal async Task<bool> Enqueue(string Song, string Adder)
         {
-            var Results = await SongRequest.Search(Song, true);
+            var Results = await SongRequest.Search(Song, false);
             if (Results.Count == 0)
             {
                 return false;

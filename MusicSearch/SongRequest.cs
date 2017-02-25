@@ -1,4 +1,5 @@
-﻿using Google.Apis.YouTube.v3;
+﻿using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,23 @@ namespace MusicSearch
 {
     public class SongRequest
     {
-        public static YouTubeService YouTube = null;
+        private static YouTubeService YTHolder = null;
+        internal static YouTubeService YT
+        {
+            get
+            {
+                if (YTHolder == null)
+                {
+                    YTHolder = new YouTubeService(new BaseClientService.Initializer
+                    {
+                        ApiKey = YouTube
+                    });
+                }
+
+                return YTHolder;
+            }
+        }
+        public static string YouTube;
         public static string SoundCloud = null;
         private static readonly Regex YoutubeRegex = new Regex(@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
 
@@ -60,8 +77,7 @@ namespace MusicSearch
         {
             var Query = ((string)ToSearch).Trim();
             var Results = new List<Song>();
-            Uri Uri;
-
+            
             var Match = YoutubeRegex.Match(Query);
             if (Match.Success)
             {
@@ -79,13 +95,12 @@ namespace MusicSearch
                     Results.Add(SoundCloudParse(JToken.Parse(SC)));
                 }
             }
-            else if (Uri.TryCreate(Query, UriKind.Absolute, out Uri))
+            else if (Uri.TryCreate(Query, UriKind.Absolute, out Uri Url))
             {
-                Console.WriteLine(Uri.LocalPath);
                 Results.Add(new Song
                 {
-                    FullName = Path.GetFileNameWithoutExtension(Uri.LocalPath),
-                    Desc = $"Remote {Path.GetExtension(Uri.LocalPath)} file",
+                    FullName = Path.GetFileNameWithoutExtension(Url.LocalPath),
+                    Desc = $"Remote {Path.GetExtension(Url.LocalPath)} file",
                     Url = Query,
                     Type = SongType.File
                 });
@@ -116,9 +131,9 @@ namespace MusicSearch
 
             if (!ReturnAtOnce || Results.Count == 0)
             {
-                var SC = ($"http://api.soundcloud.com/tracks/?client_id={SoundCloud}&q={System.Text.Encodings.Web.UrlEncoder.Default.Encode(Query)}").WebResponse();
+                var SC = $"http://api.soundcloud.com/tracks/?client_id={SoundCloud}&q={System.Text.Encodings.Web.UrlEncoder.Default.Encode(Query)}".WebResponse();
 
-                var ListRequest = YouTube.Search.List("snippet");
+                var ListRequest = YT.Search.List("snippet");
                 ListRequest.Q = Query;
                 ListRequest.MaxResults = 3;
                 ListRequest.Type = "video";
@@ -150,7 +165,7 @@ namespace MusicSearch
 
         private static async Task<Song?> YouTubeParse(string VideoId)
         {
-            var Search = YouTube.Videos.List("contentDetails,snippet");
+            var Search = YT.Videos.List("contentDetails,snippet");
             Search.Id = VideoId;
 
             var Videos = await Search.ExecuteAsync();
