@@ -55,7 +55,7 @@ namespace CaiqueServer.Cloud
                             Name = Userdata.Name
                         });
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/emptyUser.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/emptyUser.png", System.IO.FileMode.Open));
 
                         await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
                     }
@@ -79,6 +79,10 @@ namespace CaiqueServer.Cloud
                 {
                     case "text":
                         Chat.Home.ById(Event.Chat).Distribute(Event, "high");
+                        break;
+
+                    case "typing":
+                        Chat.Home.ById(Event.Chat).Distribute(Event);
                         break;
 
                     case "madd":
@@ -175,16 +179,17 @@ namespace CaiqueServer.Cloud
                     case "newchat":
                         var Id = await Database.Client.PushAsync("chat", new
                         {
-                            data = new DatabaseChat
+                            data = Newtonsoft.Json.JsonConvert.DeserializeObject<DatabaseChat>(Event.Text)
+                            /*new DatabaseChat
                             {
                                 Title = Event.Text,
                                 Tags = new[] { "test", "anime", "manga", "fps", "moba" }
-                            }
+                            }*/
                         });
 
                         var ChatId = Id.Result.Name.ToString();
 
-                        await new Firebase.Storage.FirebaseStorage("gs://firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/emptyChat.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/emptyChat.png", System.IO.FileMode.Open));
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
 
                         break;
