@@ -5,27 +5,46 @@ namespace MusicSearch
     [JsonObject(MemberSerialization.OptIn)]
     public struct Song
     {
-        [JsonProperty("name", Required = Required.Always)]
+        public static int MaxLength = 100;
+
+        [JsonProperty("name", Required = Required.AllowNull)]
         public string FullName;
 
-        [JsonProperty("desc", Required = Required.Always)]
-        public string Desc;
+        [JsonProperty("desc", Required = Required.AllowNull)]
+        public string Desc
+        {
+            get
+            {
+                return mDesc;
+            }
+            set
+            {
+                mDesc = value;
+                if (mDesc.Length > MaxLength)
+                {
+                    mDesc = mDesc.Substring(0, MaxLength - 3) + "...";
+                }
+            }
+        }
 
-        [JsonProperty("url", Required = Required.Always)]
+        private string mDesc;
+
+        [JsonProperty("url", Required = Required.AllowNull)]
         public string Url;
 
-        [JsonProperty("adder", Required = Required.Default)]
+        [JsonProperty("adder", Required = Required.AllowNull)]
         public string Adder;
 
-        [JsonProperty("type", Required = Required.Always)]
+        [JsonProperty("type", Required = Required.AllowNull)]
         public SongType Type;
 
-        [JsonProperty("tn", Required = Required.Default)]
-        public string Thumbnail;
-        
-        public string GetThumbnail(string Replacement)
-            => Thumbnail != null && Thumbnail != string.Empty ? Thumbnail : Replacement;
+        [JsonProperty("tn", Required = Required.AllowNull)]
+        public string ThumbNail;
 
+        public string GetThumbnail(string Replacement)
+            => ThumbNail != null && ThumbNail != string.Empty ? ThumbNail : Replacement;
+
+        [JsonIgnore]
         public string Title
         {
             get

@@ -46,8 +46,6 @@ namespace CaiqueServer
 
             Console.WriteLine("Boot");
 
-            Streamer.Get("test").Enqueue("Au5", "test");
-
             while (true)
             {
                 Console.Title = "Caique " + Cloud.Messaging.Acks + " " + Cloud.Messaging.WaitAck.Count + " " + Cloud.Messaging.Saves;

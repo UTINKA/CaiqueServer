@@ -60,6 +60,17 @@ namespace CaiqueServer.Cloud
                         await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
                     }
                 }
+                else
+                {
+                    Messaging.Send(new SendMessage
+                    {
+                        To = In.From,
+                        Data = new Event
+                        {
+                            Type = "reg"
+                        }
+                    });
+                }
             }
             else
             {
@@ -71,7 +82,19 @@ namespace CaiqueServer.Cloud
                         break;
 
                     case "madd":
-                        Music.Streamer.Get(Event.Chat).Enqueue(Event.Text, Event.Sender);
+                        if (await Music.Streamer.Get(Event.Chat).Enqueue(Event.Text, Event.Sender))
+                        {
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data = new Event
+                                {
+                                    Chat = Event.Chat,
+                                    Type = "play",
+                                    Text = Music.Streamer.Serialize(Event.Chat)
+                                }
+                            });
+                        }
                         break;
 
                     case "msearch":
@@ -84,23 +107,6 @@ namespace CaiqueServer.Cloud
 
                     case "mskip":
                         Music.Streamer.Get(Event.Chat).Skip();
-                        break;
-
-                    case "mplaying":
-                        if (Music.Streamer.TryGetSong(Event.Chat, out Song))
-                        {
-                            Messaging.Send(new SendMessage
-                            {
-                                To = In.From,
-                                Data = new Event
-                                {
-                                    Chat = Event.Chat,
-                                    Type = "play",
-                                    Text = Song.Title,
-                                    Sender = Song.Adder
-                                }
-                            });
-                        }
                         break;
 
                     /*case "mpush":
@@ -141,12 +147,16 @@ namespace CaiqueServer.Cloud
                         }
                         break;
 
-                    case "mqueue":
-                        Event.Text = Music.Streamer.Serialize(Event.Chat);
+                    case "mplaying":
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = Event
+                            Data = new Event
+                            {
+                                Chat = Event.Chat,
+                                Type = "play",
+                                Text = Music.Streamer.Serialize(Event.Chat)
+                            }
                         });
                         break;
 

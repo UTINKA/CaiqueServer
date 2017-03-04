@@ -185,7 +185,7 @@ namespace MusicSearch
                     Desc = $"{TimeSpanToString(XmlConvert.ToTimeSpan(Result.ContentDetails.Duration))} on YouTube | {Desc}",
                     Url = $"http://www.youtube.com/watch?v={Search.Id}",
                     Type = SongType.YouTube,
-                    Thumbnail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
+                    ThumbNail = Result.Snippet.Thumbnails.Maxres?.Url ?? Result.Snippet.Thumbnails.Default__?.Url
                 };
             }
 
@@ -217,7 +217,7 @@ namespace MusicSearch
                 Desc = $"{TimeSpanToString(new TimeSpan(0, 0, 0, 0, Response["duration"].ToObject<int>()))} on SoundCloud | {StripHtml(Desc.Trim())}",
                 Url = Response["uri"].ToString(),
                 Type = SongType.SoundCloud,
-                Thumbnail = Thumb
+                ThumbNail = Thumb
             };
         }
 

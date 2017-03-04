@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace MusicSearch
 {
-    class SongRequestLocal
+    public class SongRequestLocal
     {
-        private static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
+        public static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
         internal struct SmallFileInfo
         {
             internal string Name;

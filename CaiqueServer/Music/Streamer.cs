@@ -3,7 +3,6 @@ using MusicSearch;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,8 +38,7 @@ namespace CaiqueServer.Music
 
         internal static string Serialize(string Chat)
         {
-            Streamer Streamer;
-            if (Streamers.TryGetValue(Chat, out Streamer))
+            if (Streamers.TryGetValue(Chat, out Streamer Streamer))
             {
                 return JsonConvert.SerializeObject(Streamer.Queue);
             }
@@ -136,9 +134,8 @@ namespace CaiqueServer.Music
                                     Chat.Home.ById(Id).Distribute(new Cloud.Json.Event
                                     {
                                         Chat = Id,
-                                        Type = "play",
-                                        Text = Queue.Playing.Title,
-                                        Sender = Queue.Playing.Adder
+                                        Type = "start",
+                                        Text = Serialize(Id)
                                     });
                                 });
                             }
@@ -163,6 +160,15 @@ namespace CaiqueServer.Music
                 {
                     Queue.Invalidate();
                     Console.WriteLine("Stopped Playing");
+                }
+
+                if (Queue.Count == 0)
+                {
+                    Chat.Home.ById(Id).Distribute(new Cloud.Json.Event
+                    {
+                        Chat = Id,
+                        Type = "start"
+                    });
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,8 +8,9 @@ namespace MusicSearch
 {
     public class SongQueue
     {
+        [JsonIgnore]
         public int MaxQueued = 25;
-
+        
         public Song Playing
         {
             get
@@ -17,14 +19,16 @@ namespace MusicSearch
             }
         }
 
+        [JsonIgnore]
         public bool IsPlaying
         {
             get
             {
-                return !string.IsNullOrEmpty(mPlaying.Url);
+                return !string.IsNullOrEmpty(mPlaying.Url) && !string.IsNullOrEmpty(mPlaying.FullName);
             }
         }
 
+        [JsonIgnore]
         public bool CanAdd
         {
             get
@@ -33,11 +37,20 @@ namespace MusicSearch
             }
         }
 
+        [JsonIgnore]
         public int Count
         {
             get
             {
                 return Queue.Count;
+            }
+        }
+
+        public string[] Titles
+        {
+            get
+            {
+                return Queue.Select(x => x.Title).ToArray();
             }
         }
 

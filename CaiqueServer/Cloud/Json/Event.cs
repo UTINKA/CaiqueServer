@@ -17,7 +17,7 @@ namespace CaiqueServer.Cloud.Json
         [JsonProperty("date", Required = Required.Default)]
         public int Date;
 
-        [JsonProperty("text", Required = Required.Default)]
+        [JsonProperty("text", Required = Required.AllowNull)]
         public string Text;
 
         [JsonProperty("attach", Required = Required.Default)]

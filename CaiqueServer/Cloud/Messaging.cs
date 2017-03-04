@@ -151,6 +151,8 @@ namespace CaiqueServer.Cloud
             ToSend.MessageId = UniqueId.ToString();
             WaitAck.TryAdd(UniqueId, ToSend);
             Send((object)ToSend);
+
+            //Console.WriteLine("Sending " + JsonConvert.SerializeObject(ToSend));
         }
 
         internal static void Resend(SendMessage ToSend)
