@@ -3,6 +3,7 @@ using MusicSearch;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace CaiqueServer.Cloud
@@ -55,7 +56,7 @@ namespace CaiqueServer.Cloud
                             Name = Userdata.Name
                         });
 
-                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(System.IO.File.Open("Includes/emptyUser.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(File.Open("Includes/emptyUser.png", FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
                         await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
                     }
@@ -189,7 +190,7 @@ namespace CaiqueServer.Cloud
 
                         var ChatId = Id.Result.Name.ToString();
 
-                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(System.IO.File.Open("Includes/emptyChat.png", System.IO.FileMode.Open));
+                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(File.Open("Includes/emptyChat.png", FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
 
                         break;
