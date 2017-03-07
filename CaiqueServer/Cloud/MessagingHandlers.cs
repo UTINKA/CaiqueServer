@@ -1,5 +1,6 @@
 ﻿using CaiqueServer.Cloud.Json;
 using MusicSearch;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -106,7 +107,12 @@ namespace CaiqueServer.Cloud
                         Messaging.Send(new SendMessage
                         {
                             To = In.From,
-                            Data = new { type = "mres", r = await SongRequest.Search(Event.Text) }
+                            Data = new
+                            {
+                                chat = Event.Chat,
+                                type = "mres",
+                                r = await SongRequest.Search(Event.Text)
+                            }
                         });
                         break;
 
@@ -178,20 +184,22 @@ namespace CaiqueServer.Cloud
                         break;*/
 
                     case "newchat":
+                        var ChatData = JsonConvert.DeserializeObject<DatabaseChat>(Event.Text);
+
                         var Id = await Database.Client.PushAsync("chat", new
                         {
-                            data = Newtonsoft.Json.JsonConvert.DeserializeObject<DatabaseChat>(Event.Text)
-                            /*new DatabaseChat
-                            {
-                                Title = Event.Text,
-                                Tags = new[] { "test", "anime", "manga", "fps", "moba" }
-                            }*/
+                            data = ChatData
                         });
 
                         var ChatId = Id.Result.Name.ToString();
 
                         await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("chats").Child(ChatId).PutAsync(File.Open("Includes/emptyChat.png", FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
                         await Database.Client.SetAsync($"user/{Event.Sender}/member/{ChatId}", true);
+
+                        foreach (var Tag in ChatData.Tags)
+                        {
+                            await Database.Client.SetAsync($"tags/{Tag}/{ChatId}", true);
+                        }
 
                         break;
 
