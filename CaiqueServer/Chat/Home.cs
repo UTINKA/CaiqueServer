@@ -24,35 +24,37 @@ namespace CaiqueServer.Chat
             });
         }
 
-        internal static async Task<Dictionary<string, DatabaseChat>> ByTags(string[] Tags)
+        internal static async Task<string[]> ByTags(string[] Tags)
         {
-            List<string> ChatKeys = null;
-            var Chats = new Dictionary<string, DatabaseChat>();
+            List<string> Chats = null;
+            var Relevancy = new Dictionary<string, int>();
 
             foreach (var Tag in Tags)
             {
                 var TagResults = (await Cloud.Database.Client.GetAsync($"tags/{Tag}")).ResultAs<Dictionary<string, bool>>();
                 if (TagResults == null)
                 {
-                    return Chats;
+                    return new string[0];
                 }
 
-                if (ChatKeys == null)
+                if (Chats == null)
                 {
-                    ChatKeys = TagResults.Keys.ToList();
+                    Chats = TagResults.Keys.ToList();
                 }
                 else
                 {
-                    ChatKeys = TagResults.Keys.Where(x => ChatKeys.Contains(x)).ToList();
+                    Chats = TagResults.Keys.Where(x => Chats.Contains(x)).ToList();
                 }
             }
 
-            foreach (var ChatKey in ChatKeys)
+            foreach (var Chat in Chats)
             {
-                Chats.Add(ChatKey, (await Cloud.Database.Client.GetAsync($"chat/{ChatKey}/data")).ResultAs<DatabaseChat>());
+                var TagsChatRes = await Cloud.Database.Client.GetAsync($"chat/{Chat}/data/tags");
+                var TagsChat = TagsChatRes.ResultAs<object[]>();
+                Relevancy.Add(Chat, TagsChat.Length);
             }
 
-            return Chats.OrderBy(x => x.Value.Tags.Length).ToDictionary(x => x.Key, x => x.Value);
+            return Chats.OrderBy(x => Relevancy[x]).ToArray();
         }
     }
 }

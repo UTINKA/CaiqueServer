@@ -76,7 +76,6 @@ namespace CaiqueServer.Cloud
             }
             else
             {
-                Song Song;
                 switch (Event.Type)
                 {
                     case "text":
@@ -120,32 +119,11 @@ namespace CaiqueServer.Cloud
                         Music.Streamer.Get(Event.Chat).Skip();
                         break;
 
-                    /*case "mpush":
-                        var Split = Event.Text.Split(' ');
-
-                        int Place, ToPlace = 1;
-                        if (int.TryParse(Split[0], out Place))
-                        {
-                            if (Split.Length == 3)
-                            {
-                                int.TryParse(Split[2], out ToPlace);
-                            }
-
-                            Event.Text = Music.Streamer.Get(Event.Chat).Queue.Push(Place, ToPlace).ToString();
-                            Event.Sender = null;
-                            Messaging.Send(new SendMessage
-                            {
-                                To = In.From,
-                                Data =  Event
-                            });
-                        }
-                        break;*/
-
                     case "mremove":
                         ushort ToRemove;
                         if (ushort.TryParse(Event.Text, out ToRemove) && ToRemove-- != 0)
                         {
-                            if (Music.Streamer.Get(Event.Chat).Queue.TryRemove(ToRemove, out Song))
+                            if (Music.Streamer.Get(Event.Chat).Queue.TryRemove(ToRemove, out Song Song))
                             {
                                 Event.Text = Song.Title;
                                 Event.Sender = null;
@@ -170,18 +148,6 @@ namespace CaiqueServer.Cloud
                             }
                         });
                         break;
-
-                    /*case "reg":
-                        await SendChatList(Event.Sender, In.From);
-                        return;*/
-
-                    /*case "profile":
-                        Messaging.Send(new SendMessage
-                        {
-                            To = In.From,
-                            Data = Database.Client.Get($"user/{Event.Sender}/data").ResultAs<DatabaseUser>()
-                        });
-                        break;*/
 
                     case "newchat":
                         var ChatData = JsonConvert.DeserializeObject<DatabaseChat>(Event.Text);
@@ -215,19 +181,27 @@ namespace CaiqueServer.Cloud
                         await Database.Client.DeleteAsync($"user/{Event.Sender}/member/{Event.Chat}");
                         break;
 
-                    case "searchtag":                   
-                        Messaging.Send(new SendMessage
+                    case "searchtag":
+                        var Split = Event.Text.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (Split.Length != 0)
                         {
-                            To = In.From,
-                            Data = new { type = "tagres", r = await Chat.Home.ByTags(Event.Text.Split(',')) }
-                        });
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data = new { type = "tagres", r = await Chat.Home.ByTags(Split) }
+                            });
+                        }
                         break;
 
                     case "update":
-                        await Database.Client.SetAsync($"chat/{Event.Chat}/data/title", Event.Text);
-                        await Database.Client.SetAsync($"chat/{Event.Chat}/data/picture", Event.Attachment);
+                        (await Chat.Home.ById(Event.Chat).Update(JsonConvert.DeserializeObject<DatabaseChat>(Event.Text))).Distribute(Event);
+                        break;
 
-                        Chat.Home.ById(Event.Chat).Distribute(Event);
+                    case "name":
+                        await Database.Client.SetAsync($"user/{Event.Sender}/data", new DatabaseUser
+                        {
+                            Name = Event.Text
+                        });
                         break;
                 }
 

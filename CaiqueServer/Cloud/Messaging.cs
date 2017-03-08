@@ -82,8 +82,7 @@ namespace CaiqueServer.Cloud
                 else if (JData["message_type"].ToString().EndsWith("ack"))
                 {
                     var SentAck = JData.ToObject<SentMessageAck>();
-                    int MessageId;
-                    if (int.TryParse(SentAck.MessageId, out MessageId) && WaitAck.ContainsKey(MessageId))
+                    if (int.TryParse(SentAck.MessageId, out int MessageId) && WaitAck.ContainsKey(MessageId))
                     {
                         SendMessage Out;
                         if (SentAck.MessageType == "ack")

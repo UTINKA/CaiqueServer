@@ -1,5 +1,6 @@
 ﻿using CaiqueServer.Cloud;
 using CaiqueServer.Cloud.Json;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,9 +17,29 @@ namespace CaiqueServer.Chat
             Topic = Id;
         }
 
-        internal async Task Update(DatabaseChat Info)
+        internal async Task<Room> Update(DatabaseChat New)
         {
-            await Database.Client.SetAsync($"topics/{Topic}/info", Info);
+            var Current = (await Database.Client.GetAsync($"chat/{Topic}/data")).ResultAs<DatabaseChat>();
+
+            foreach (var Tag in New.Tags)
+            {
+                if (!Current.Tags.Contains(Tag))
+                {
+                    await Database.Client.SetAsync($"tags/{Tag}/{Topic}", true);
+                }
+            }
+
+            foreach (var Tag in Current.Tags)
+            {
+                if (!New.Tags.Contains(Tag))
+                {
+                    await Database.Client.DeleteAsync($"tags/{Tag}/{Topic}");
+                }
+            }
+            
+            await Database.Client.SetAsync($"chat/{Topic}/data", New);
+
+            return this;
         }
         
         internal void Distribute(Event Event, string Priority = "normal")
