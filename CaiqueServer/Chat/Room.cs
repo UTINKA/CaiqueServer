@@ -20,6 +20,10 @@ namespace CaiqueServer.Chat
         internal async Task<Room> Update(DatabaseChat New)
         {
             var Current = (await Database.Client.GetAsync($"chat/{Topic}/data")).ResultAs<DatabaseChat>();
+            if (Current.Tags == null)
+            {
+                Current.Tags = new string[0];
+            }
 
             foreach (var Tag in New.Tags)
             {
@@ -36,7 +40,7 @@ namespace CaiqueServer.Chat
                     await Database.Client.DeleteAsync($"tags/{Tag}/{Topic}");
                 }
             }
-            
+
             await Database.Client.SetAsync($"chat/{Topic}/data", New);
 
             return this;
