@@ -93,6 +93,8 @@ namespace CaiqueServer
                             throw Ex2;
                         }
                     }
+
+                    await Task.Delay(i * 500);
                 }
             }
             catch (Exception Ex)

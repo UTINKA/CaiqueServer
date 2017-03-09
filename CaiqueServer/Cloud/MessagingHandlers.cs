@@ -45,21 +45,37 @@ namespace CaiqueServer.Cloud
                 if (Event.Type == "reg" && Event.Text != null)
                 {
                     var Userdata = await Authentication.UserdataFromToken(Event.Text);
-                    Console.WriteLine("Register with " + Userdata.Email);
-
-                    await Database.Client.SetAsync($"token/{In.From}", new { key = Userdata.Sub });
-                    //await SendChatList(Userdata.Sub, In.From);
-
-                    if ((await Database.Client.GetAsync($"user/{Userdata.Sub}/data")).ResultAs<DatabaseUser>() == null)
+                    if (Userdata.Email == null)
                     {
-                        await Database.Client.SetAsync($"user/{Userdata.Sub}/data", new DatabaseUser
+                        Console.WriteLine("Can't register device");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Register with " + Userdata.Email);
+
+                        await Database.Client.SetAsync($"token/{In.From}", new { key = Userdata.Sub });
+                        //await SendChatList(Userdata.Sub, In.From);
+
+                        if ((await Database.Client.GetAsync($"user/{Userdata.Sub}/data")).ResultAs<DatabaseUser>() == null)
                         {
-                            Name = Userdata.Name
-                        });
+                            await Database.Client.SetAsync($"user/{Userdata.Sub}/data", new DatabaseUser
+                            {
+                                Name = Userdata.Name
+                            });
 
-                        await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(File.Open("Includes/emptyUser.png", FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                            await new Firebase.Storage.FirebaseStorage("firebase-caique.appspot.com").Child("users").Child(Userdata.Sub).PutAsync(File.Open("Includes/emptyUser.png", FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
-                        await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
+                            await Database.Client.SetAsync($"user/{Userdata.Sub}/member/-KSqbu0zMurmthzBE7GF", true);
+
+                            Messaging.Send(new SendMessage
+                            {
+                                To = In.From,
+                                Data = new
+                                {
+                                    type = "regcomplete"
+                                }
+                            });
+                        }
                     }
                 }
                 else

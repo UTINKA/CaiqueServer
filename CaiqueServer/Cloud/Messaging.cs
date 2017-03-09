@@ -105,7 +105,7 @@ namespace CaiqueServer.Cloud
                             {
                                 Console.WriteLine(Out.ToString());
 
-                                if (SentAck.Error != "INVALID_REQUEST")
+                                if (SentAck.Error != "INVALID_REQUEST" && SentAck.Error != "DEVICE_UNREGISTERED")
                                 {
                                     await Task.Delay(1500);
                                     Resend(Out);
