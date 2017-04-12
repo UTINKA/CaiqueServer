@@ -113,18 +113,18 @@ namespace MusicSearch
 
             return 0;
         }
-
-        internal bool TryPush(int Place, int ToPlace, out Song Pushed)
+        
+        public bool TryPush(int Place, int ToPlace, out Song Pushed)
         {
             Pushed = default(Song);
 
             var NewQueue = new ConcurrentQueue<Song>();
             var Songs = ToList();
-            if (Place > 0 && ToPlace > 0 && Place != ToPlace && Songs.Count >= Place && Songs.Count >= ToPlace)
+            if (Place >= 0 && ToPlace >= 0 && Place != ToPlace && Songs.Count > Place && Songs.Count > ToPlace)
             {
-                Pushed = Songs[Place - 1];
+                Pushed = Songs[Place];
                 Songs.Remove(Pushed);
-                Songs.Insert(ToPlace - 1, Pushed);
+                Songs.Insert(ToPlace, Pushed);
 
                 foreach (var Song in Songs)
                 {

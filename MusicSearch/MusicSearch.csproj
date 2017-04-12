@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.21.0.760" />
+    <PackageReference Include="Google.Apis.YouTube.v3" Version="1.24.1.760" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.2-beta2" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.3.0" />
   </ItemGroup>

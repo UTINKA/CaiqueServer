@@ -8,18 +8,18 @@ namespace MusicSearch
     public class SongRequestLocal
     {
         public static string MusicDir = Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%") + "\\Music\\";
-        internal struct SmallFileInfo
+        public struct SmallFileInfo
         {
-            internal string Name;
-            internal string Dir;
-            internal string Path;
-            internal string Extension;
+            public string Name;
+            public string Dir;
+            public string Path;
+            public string Extension;
         }
 
         private static SmallFileInfo[] MusicFiles = new SmallFileInfo[0];
         private static DateTime LastEdit = new DateTime(0);
 
-        internal static SmallFileInfo[] GetFiles()
+        public static SmallFileInfo[] GetFiles()
         {
             try
             {
